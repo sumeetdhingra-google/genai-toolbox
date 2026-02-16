@@ -31,6 +31,9 @@ reliability, performance, and ease of use.
 - [`mysql-list-tables`](../tools/mysql/mysql-list-tables.md)
   List tables in a MySQL database.
 
+- [`mysql-list-table-stats`](../tools/mysql/mysql-list-table-stats.md)
+  List tables statistics of a table in a MySQL database.
+
 - [`mysql-list-tables-missing-unique-indexes`](../tools/mysql/mysql-list-tables-missing-unique-indexes.md)
   List tables in a MySQL database that do not have primary or unique indices.
 
