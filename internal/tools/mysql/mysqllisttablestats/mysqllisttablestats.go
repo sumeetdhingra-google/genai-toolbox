@@ -53,7 +53,7 @@ FROM
   ON (t.table_schema = ts.table_schema AND t.table_name = ts.table_name)
 WHERE
   t.table_schema NOT IN ('sys', 'information_schema', 'mysql', 'performance_schema')
-  AND (COALESCE(?, '') = '' OR t.table_schema = ?)
+  AND t.table_schema = IFNULL(?,DATABASE())
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY 
   CASE
@@ -161,7 +161,7 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 		return nil, fmt.Errorf("error getting logger: %s", err)
 	}
 	logger.DebugContext(ctx, fmt.Sprintf("executing `%s` tool query: %s", resourceType, listTableStatsStatement))
-	sliceParams := []any{table_schema, table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
+	sliceParams := []any{table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
 	return source.RunSQL(ctx, listTableStatsStatement, sliceParams)
 }
 

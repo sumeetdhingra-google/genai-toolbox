@@ -3315,20 +3315,6 @@ func RunMySQLListTableStatsTest(t *testing.T, databaseName, tableNameParam, tabl
 		IOMiscLatency:           any(nil),
 	}
 
-	// Insert larger sample data to ensure statistics are collected
-        /*
-	insertStmt := fmt.Sprintf(`
-                INSERT INTO %s.%s (id, name) VALUES
-                (1, 'Alice'),
-                (2, 'Bob'),
-                (3, 'Charlie'),
-                (4, 'Roger')
-        `, databaseName, tableNameParam)
-
-        if _, err := pool.Exec(insertStmt); err != nil {
-                t.Fatalf("unable to insert data: %s", err)
-        }      
-	*/
 
 	invokeTcs := []struct {
 		name           string

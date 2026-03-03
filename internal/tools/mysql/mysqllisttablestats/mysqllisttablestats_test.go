@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/genai-toolbox/internal/server"
 	"github.com/googleapis/genai-toolbox/internal/testutils"
-	"github.com/googleapis/genai-toolbox/internal/tools/mysql/mysqllisttablefragmentation"
+	"github.com/googleapis/genai-toolbox/internal/tools/mysql/mysqllisttablestats"
 )
 
 func TestParseFromYamlExecuteSql(t *testing.T) {
