@@ -42,9 +42,9 @@ const listTableStatsStatement = `
   ts.rows_deleted AS 'rows_deleted',
   ts.io_read_requests as 'io_reads' ,
   ROUND(ts.io_read_latency / 1000000000000, 2) AS 'io_read_latency',
-  ts.io_write_requests AS 'IO Writes',
+  ts.io_write_requests AS 'io_writes',
   ROUND(ts.io_write_latency / 1000000000000, 2) AS 'io_write_latency',
-  io_misc_requests AS 'IO Misc',
+  ts.io_misc_requests AS 'io_misc_requests',
   ROUND(ts.io_misc_latency / 1000000000000, 2) AS 'io_misc_latency'
 FROM
   information_schema.tables AS t
