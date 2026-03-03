@@ -32,7 +32,7 @@ This tool takes 4 optional input parameters:
 ```yaml
 kind: tools
 name: list_table_stats
-type: mysql-list-table-fragmentation
+type: mysql-list-table-stats
 source: my-mysql-instance
 description: Display table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table. Specifying a database name or table name filters the output to that specific db or table. Results are limited to 50 by default, with a maximum allowable limit of 1000.
 ```
