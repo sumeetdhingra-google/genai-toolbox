@@ -16,10 +16,12 @@ package mongodbdeletemany
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 
 	"github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
+	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
@@ -49,15 +51,16 @@ type compatibleSource interface {
 }
 
 type Config struct {
-	Name          string                `yaml:"name" validate:"required"`
-	Type          string                `yaml:"type" validate:"required"`
-	Source        string                `yaml:"source" validate:"required"`
-	AuthRequired  []string              `yaml:"authRequired" validate:"required"`
-	Description   string                `yaml:"description" validate:"required"`
-	Database      string                `yaml:"database" validate:"required"`
-	Collection    string                `yaml:"collection" validate:"required"`
-	FilterPayload string                `yaml:"filterPayload" validate:"required"`
-	FilterParams  parameters.Parameters `yaml:"filterParams"`
+	Name          string                 `yaml:"name" validate:"required"`
+	Type          string                 `yaml:"type" validate:"required"`
+	Source        string                 `yaml:"source" validate:"required"`
+	AuthRequired  []string               `yaml:"authRequired" validate:"required"`
+	Description   string                 `yaml:"description" validate:"required"`
+	Database      string                 `yaml:"database" validate:"required"`
+	Collection    string                 `yaml:"collection" validate:"required"`
+	FilterPayload string                 `yaml:"filterPayload" validate:"required"`
+	FilterParams  parameters.Parameters  `yaml:"filterParams"`
+	Annotations   *tools.ToolAnnotations `yaml:"annotations,omitempty"`
 }
 
 // validate interface
@@ -85,7 +88,8 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 	}
 
 	// Create MCP manifest
-	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
+	annotations := tools.GetAnnotationsOrDefault(cfg.Annotations, tools.NewDestructiveAnnotations)
+	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, annotations)
 
 	// finish tool setup
 	return Tool{
@@ -106,18 +110,22 @@ type Tool struct {
 	mcpManifest tools.McpManifest
 }
 
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
 	filterString, err := parameters.PopulateTemplateWithJSON("MongoDBDeleteManyFilter", t.FilterPayload, paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating filter: %s", err)
+		return nil, util.NewAgentError("error populating filter", err)
 	}
-	return source.DeleteMany(ctx, filterString, t.Database, t.Collection)
+	resp, err := source.DeleteMany(ctx, filterString, t.Database, t.Collection)
+	if err != nil {
+		return nil, util.ProcessGeneralError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {

@@ -16,6 +16,7 @@ package mongodbfind
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 
 	"github.com/goccy/go-yaml"
@@ -52,20 +53,21 @@ type compatibleSource interface {
 }
 
 type Config struct {
-	Name           string                `yaml:"name" validate:"required"`
-	Type           string                `yaml:"type" validate:"required"`
-	Source         string                `yaml:"source" validate:"required"`
-	AuthRequired   []string              `yaml:"authRequired" validate:"required"`
-	Description    string                `yaml:"description" validate:"required"`
-	Database       string                `yaml:"database" validate:"required"`
-	Collection     string                `yaml:"collection" validate:"required"`
-	FilterPayload  string                `yaml:"filterPayload" validate:"required"`
-	FilterParams   parameters.Parameters `yaml:"filterParams"`
-	ProjectPayload string                `yaml:"projectPayload"`
-	ProjectParams  parameters.Parameters `yaml:"projectParams"`
-	SortPayload    string                `yaml:"sortPayload"`
-	SortParams     parameters.Parameters `yaml:"sortParams"`
-	Limit          int64                 `yaml:"limit"`
+	Name           string                 `yaml:"name" validate:"required"`
+	Type           string                 `yaml:"type" validate:"required"`
+	Source         string                 `yaml:"source" validate:"required"`
+	AuthRequired   []string               `yaml:"authRequired" validate:"required"`
+	Description    string                 `yaml:"description" validate:"required"`
+	Database       string                 `yaml:"database" validate:"required"`
+	Collection     string                 `yaml:"collection" validate:"required"`
+	FilterPayload  string                 `yaml:"filterPayload" validate:"required"`
+	FilterParams   parameters.Parameters  `yaml:"filterParams"`
+	ProjectPayload string                 `yaml:"projectPayload"`
+	ProjectParams  parameters.Parameters  `yaml:"projectParams"`
+	SortPayload    string                 `yaml:"sortPayload"`
+	SortParams     parameters.Parameters  `yaml:"sortParams"`
+	Limit          int64                  `yaml:"limit"`
+	Annotations    *tools.ToolAnnotations `yaml:"annotations,omitempty"`
 }
 
 // validate interface
@@ -96,8 +98,9 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 		paramManifest = make([]parameters.ParameterManifest, 0)
 	}
 
-	// Create MCP manifest
-	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
+	// Create MCP manifest with annotations
+	annotations := tools.GetAnnotationsOrDefault(cfg.Annotations, tools.NewReadOnlyAnnotations)
+	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, annotations)
 
 	// finish tool setup
 	return Tool{
@@ -121,7 +124,7 @@ type Tool struct {
 func getOptions(ctx context.Context, sortParameters parameters.Parameters, projectPayload string, limit int64, paramsMap map[string]any) (*options.FindOptionsBuilder, error) {
 	logger, err := util.LoggerFromContext(ctx)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	opts := options.Find()
@@ -157,22 +160,26 @@ func getOptions(ctx context.Context, sortParameters parameters.Parameters, proje
 	return opts, nil
 }
 
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
 	filterString, err := parameters.PopulateTemplateWithJSON("MongoDBFindFilterString", t.FilterPayload, paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating filter: %s", err)
+		return nil, util.NewAgentError("error populating filter", err)
 	}
 	opts, err := getOptions(ctx, t.SortParams, t.ProjectPayload, t.Limit, paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating options: %s", err)
+		return nil, util.NewAgentError("error populating options", err)
 	}
-	return source.Find(ctx, filterString, t.Database, t.Collection, opts)
+	resp, err := source.Find(ctx, filterString, t.Database, t.Collection, opts)
+	if err != nil {
+		return nil, util.ProcessGeneralError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {

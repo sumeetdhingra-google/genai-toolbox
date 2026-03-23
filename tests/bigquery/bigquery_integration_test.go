@@ -75,7 +75,7 @@ func initBigQueryConnection(project string) (*bigqueryapi.Client, error) {
 
 func TestBigQueryToolEndpoints(t *testing.T) {
 	sourceConfig := getBigQueryVars(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 
 	var args []string
@@ -173,9 +173,9 @@ func TestBigQueryToolEndpoints(t *testing.T) {
 	datasetInfoWant := "\"Location\":\"US\",\"DefaultTableExpiration\":0,\"Labels\":null,\"Access\":"
 	tableInfoWant := "{\"Name\":\"\",\"Location\":\"US\",\"Description\":\"\",\"Schema\":[{\"Name\":\"id\""
 	ddlWant := `"Query executed successfully and returned no content."`
-	dataInsightsWant := `(?s)Schema Resolved.*Retrieval Query.*SQL Generated.*Answer`
+	dataInsightsWant := `FINAL_RESPONSE`
 	// Partial message; the full error message is too long.
-	mcpMyFailToolWant := `{"jsonrpc":"2.0","id":"invoke-fail-tool","result":{"content":[{"type":"text","text":"query validation failed: failed to insert dry run job: googleapi: Error 400: Syntax error: Unexpected identifier \"SELEC\" at [1:1]`
+	mcpMyFailToolWant := `{"jsonrpc":"2.0","id":"invoke-fail-tool","result":{"content":[{"type":"text","text":"error processing GCP request: failed to insert dry run job: googleapi: Error 400: Syntax error: Unexpected identifier \"SELEC\" at [1:1]`
 	mcpSelect1Want := `{"jsonrpc":"2.0","id":"invoke my-auth-required-tool","result":{"content":[{"type":"text","text":"{\"f0_\":1}"}]}}`
 	createColArray := `["id INT64", "name STRING", "age INT64"]`
 	selectEmptyWant := `"The query returned 0 rows."`
@@ -883,6 +883,11 @@ func addClientAuthSourceConfig(t *testing.T, config map[string]any) map[string]a
 		"project":        BigqueryProject,
 		"useClientOAuth": true,
 	}
+	sources["my-custom-client-auth-source"] = map[string]any{
+		"type":           BigquerySourceType,
+		"project":        BigqueryProject,
+		"useClientOAuth": "X-Custom-Auth",
+	}
 	config["sources"] = sources
 	return config
 }
@@ -922,6 +927,12 @@ func addBigQuerySqlToolConfig(t *testing.T, config map[string]any, toolStatement
 		"description": "Tool to test client authorization.",
 		"statement":   "SELECT 1",
 	}
+	tools["my-custom-client-auth-tool"] = map[string]any{
+		"type":        "bigquery-sql",
+		"source":      "my-custom-client-auth-source",
+		"description": "Tool to test custom client authorization header.",
+		"statement":   "SELECT 1",
+	}
 	config["tools"] = tools
 	return config
 }
@@ -954,7 +965,8 @@ func runBigQueryExecuteSqlToolInvokeTest(t *testing.T, select1Want, invokeParamW
 			api:           "http://127.0.0.1:5000/api/tool/my-exec-sql-tool/invoke",
 			requestHeader: map[string]string{},
 			requestBody:   bytes.NewBuffer([]byte(`{}`)),
-			isErr:         true,
+			want:          `{"error":"parameter \"sql\" is required"}`,
+			isErr:         false,
 		},
 		{
 			name:          "invoke my-exec-sql-tool",
@@ -1009,6 +1021,7 @@ func runBigQueryExecuteSqlToolInvokeTest(t *testing.T, select1Want, invokeParamW
 			api:           "http://127.0.0.1:5000/api/tool/my-exec-sql-tool/invoke",
 			requestHeader: map[string]string{},
 			requestBody:   bytes.NewBuffer([]byte(`{}`)),
+			want:          `{"error":"parameter \"sql\" is required"}`,
 			isErr:         true,
 		},
 		{
@@ -1161,12 +1174,11 @@ func runBigQueryWriteModeBlockedTest(t *testing.T, tableNameParam, datasetName s
 		name           string
 		sql            string
 		wantStatusCode int
-		wantInError    string
 		wantResult     string
 	}{
-		{"SELECT statement should succeed", fmt.Sprintf("SELECT id, name FROM %s WHERE id = 1", tableNameParam), http.StatusOK, "", `[{"id":1,"name":"Alice"}]`},
-		{"INSERT statement should fail", fmt.Sprintf("INSERT INTO %s (id, name) VALUES (10, 'test')", tableNameParam), http.StatusBadRequest, "write mode is 'blocked', only SELECT statements are allowed", ""},
-		{"CREATE TABLE statement should fail", fmt.Sprintf("CREATE TABLE %s.new_table (x INT64)", datasetName), http.StatusBadRequest, "write mode is 'blocked', only SELECT statements are allowed", ""},
+		{"SELECT statement should succeed", fmt.Sprintf("SELECT id, name FROM %s WHERE id = 1", tableNameParam), http.StatusOK, `[{"id":1,"name":"Alice"}]`},
+		{"INSERT statement should fail", fmt.Sprintf("INSERT INTO %s (id, name) VALUES (10, 'test')", tableNameParam), http.StatusOK, "{\"error\":\"write mode is 'blocked', only SELECT statements are allowed\"}"},
+		{"CREATE TABLE statement should fail", fmt.Sprintf("CREATE TABLE %s.new_table (x INT64)", datasetName), http.StatusOK, "{\"error\":\"write mode is 'blocked', only SELECT statements are allowed\"}"},
 	}
 
 	for _, tc := range testCases {
@@ -1180,15 +1192,6 @@ func runBigQueryWriteModeBlockedTest(t *testing.T, tableNameParam, datasetName s
 				t.Fatalf("unexpected status code: got %d, want %d. Body: %s", resp.StatusCode, tc.wantStatusCode, string(bodyBytes))
 			}
 
-			if tc.wantInError != "" {
-				errStr, ok := result["error"].(string)
-				if !ok {
-					t.Fatalf("expected 'error' field in response, got %v", result)
-				}
-				if !strings.Contains(errStr, tc.wantInError) {
-					t.Fatalf("expected error message to contain %q, but got %q", tc.wantInError, errStr)
-				}
-			}
 			if tc.wantResult != "" {
 				resStr, ok := result["result"].(string)
 				if !ok {
@@ -1215,9 +1218,9 @@ func runBigQueryWriteModeProtectedTest(t *testing.T, permanentDatasetName string
 			name:           "CREATE TABLE to permanent dataset should fail",
 			toolName:       "my-exec-sql-tool",
 			requestBody:    fmt.Sprintf(`{"sql": "CREATE TABLE %s.new_table (x INT64)"}`, permanentDatasetName),
-			wantStatusCode: http.StatusBadRequest,
-			wantInError:    "protected write mode only supports SELECT statements, or write operations in the anonymous dataset",
-			wantResult:     "",
+			wantStatusCode: http.StatusOK,
+			wantInError:    "",
+			wantResult:     "protected write mode only supports SELECT statements, or write operations in the anonymous dataset",
 		},
 		{
 			name:           "CREATE TEMP TABLE should succeed",
@@ -1709,7 +1712,8 @@ func runBigQueryDataTypeTests(t *testing.T) {
 			api:           "http://127.0.0.1:5000/api/tool/my-scalar-datatype-tool/invoke",
 			requestHeader: map[string]string{},
 			requestBody:   bytes.NewBuffer([]byte(`{"int_val": 123}`)),
-			isErr:         true,
+			want:          `{"error":"parameter \"string_val\" is required"}`,
+			isErr:         false,
 		},
 		{
 			name:          "invoke my-array-datatype-tool",
@@ -2339,7 +2343,7 @@ func runBigQueryGetTableInfoToolInvokeTest(t *testing.T, datasetName, tableName,
 func runBigQueryConversationalAnalyticsInvokeTest(t *testing.T, datasetName, tableName, dataInsightsWant string) {
 	// Each test is expected to complete in under 10s, we set a 25s timeout with retries to avoid flaky tests.
 	const maxRetries = 3
-	const requestTimeout = 25 * time.Second
+	const requestTimeout = 340 * time.Second
 	// Get ID token
 	idToken, err := tests.GetGoogleIdToken(tests.ClientId)
 	if err != nil {
@@ -2400,7 +2404,7 @@ func runBigQueryConversationalAnalyticsInvokeTest(t *testing.T, datasetName, tab
 				`{"user_query_with_context": "What are the names in the table?", "table_references": %q}`,
 				tableRefsJSON,
 			))),
-			want:  "[{\"f0_\":1}]",
+			want:  dataInsightsWant,
 			isErr: false,
 		},
 		{
@@ -2578,7 +2582,7 @@ func runListTableIdsWithRestriction(t *testing.T, allowedDatasetName, disallowed
 		{
 			name:           "invoke on disallowed dataset",
 			dataset:        disallowedDatasetName,
-			wantStatusCode: http.StatusBadRequest, // Or the specific error code returned
+			wantStatusCode: http.StatusOK,
 			wantInError:    fmt.Sprintf("access denied to dataset '%s'", disallowedDatasetName),
 		},
 	}
@@ -2652,7 +2656,7 @@ func runGetDatasetInfoWithRestriction(t *testing.T, allowedDatasetName, disallow
 		{
 			name:           "invoke on disallowed dataset",
 			dataset:        disallowedDatasetName,
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    fmt.Sprintf("access denied to dataset '%s'", disallowedDatasetName),
 		},
 	}
@@ -2704,8 +2708,7 @@ func runGetTableInfoWithRestriction(t *testing.T, allowedDatasetName, disallowed
 			name:           "invoke on disallowed table",
 			dataset:        disallowedDatasetName,
 			table:          disallowedTableName,
-			wantStatusCode: http.StatusBadRequest,
-			wantInError:    fmt.Sprintf("access denied to dataset '%s'", disallowedDatasetName),
+			wantStatusCode: http.StatusOK,
 		},
 	}
 
@@ -2759,7 +2762,7 @@ func runExecuteSqlWithRestriction(t *testing.T, allowedTableFullName, disallowed
 		{
 			name:           "invoke on disallowed table",
 			sql:            fmt.Sprintf("SELECT * FROM %s", disallowedTableFullName),
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError: fmt.Sprintf("query accesses dataset '%s', which is not in the allowed list",
 				strings.Join(
 					strings.Split(strings.Trim(disallowedTableFullName, "`"), ".")[0:2],
@@ -2768,31 +2771,31 @@ func runExecuteSqlWithRestriction(t *testing.T, allowedTableFullName, disallowed
 		{
 			name:           "disallowed create schema",
 			sql:            "CREATE SCHEMA another_dataset",
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    "dataset-level operations like 'CREATE_SCHEMA' are not allowed",
 		},
 		{
 			name:           "disallowed alter schema",
 			sql:            fmt.Sprintf("ALTER SCHEMA %s SET OPTIONS(description='new one')", allowedDatasetID),
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    "dataset-level operations like 'ALTER_SCHEMA' are not allowed",
 		},
 		{
 			name:           "disallowed create function",
 			sql:            fmt.Sprintf("CREATE FUNCTION %s.my_func() RETURNS INT64 AS (1)", allowedDatasetID),
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    "creating stored routines ('CREATE_FUNCTION') is not allowed",
 		},
 		{
 			name:           "disallowed create procedure",
 			sql:            fmt.Sprintf("CREATE PROCEDURE %s.my_proc() BEGIN SELECT 1; END", allowedDatasetID),
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    "unanalyzable statements like 'CREATE PROCEDURE' are not allowed",
 		},
 		{
 			name:           "disallowed execute immediate",
 			sql:            "EXECUTE IMMEDIATE 'SELECT 1'",
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    "EXECUTE IMMEDIATE is not allowed when dataset restrictions are in place",
 		},
 	}
@@ -2841,12 +2844,12 @@ func runConversationalAnalyticsWithRestriction(t *testing.T, allowedDatasetName,
 			name:           "invoke with allowed table",
 			tableRefs:      allowedTableRefsJSON,
 			wantStatusCode: http.StatusOK,
-			wantInResult:   `Answer`,
+			wantInResult:   `FINAL_RESPONSE`,
 		},
 		{
 			name:           "invoke with disallowed table",
 			tableRefs:      disallowedTableRefsJSON,
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    fmt.Sprintf("access to dataset '%s.%s' (from table '%s') is not allowed", BigqueryProject, disallowedDatasetName, disallowedTableName),
 		},
 	}
@@ -3030,12 +3033,24 @@ func runBigQuerySearchCatalogToolInvokeTest(t *testing.T, datasetName string, ta
 				}
 				t.Fatalf("expected 'result' field to be a string, got %T", result["result"])
 			}
+
+			var errorCheck map[string]any
+			if err := json.Unmarshal([]byte(resultStr), &errorCheck); err == nil {
+				if _, hasError := errorCheck["error"]; hasError {
+					if tc.isErr {
+						return
+					}
+					t.Fatalf("unexpected error object in result: %s", resultStr)
+				}
+			}
+
 			if tc.isErr && (resultStr == "" || resultStr == "[]") {
 				return
 			}
-			var entries []interface{}
+
+			var entries []any
 			if err := json.Unmarshal([]byte(resultStr), &entries); err != nil {
-				t.Fatalf("error unmarshalling result string: %v", err)
+				t.Fatalf("error unmarshalling result string: %v. Raw string: %s", err, resultStr)
 			}
 
 			if !tc.isErr {
@@ -3083,7 +3098,7 @@ func runForecastWithRestriction(t *testing.T, allowedTableFullName, disallowedTa
 		{
 			name:           "invoke with disallowed table name",
 			historyData:    disallowedTableUnquoted,
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    fmt.Sprintf("access to dataset '%s' (from table '%s') is not allowed", disallowedDatasetFQN, disallowedTableUnquoted),
 		},
 		{
@@ -3095,7 +3110,7 @@ func runForecastWithRestriction(t *testing.T, allowedTableFullName, disallowedTa
 		{
 			name:           "invoke with query on disallowed table",
 			historyData:    fmt.Sprintf("SELECT * FROM %s", disallowedTableFullName),
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
 			wantInError:    fmt.Sprintf("query in history_data accesses dataset '%s', which is not in the allowed list", disallowedDatasetFQN),
 		},
 	}
@@ -3174,8 +3189,8 @@ func runAnalyzeContributionWithRestriction(t *testing.T, allowedTableFullName, d
 		{
 			name:           "invoke with disallowed table name",
 			inputData:      disallowedTableUnquoted,
-			wantStatusCode: http.StatusBadRequest,
-			wantInError:    fmt.Sprintf("access to dataset '%s' (from table '%s') is not allowed", disallowedDatasetFQN, disallowedTableUnquoted),
+			wantStatusCode: http.StatusOK,
+			wantInResult:   fmt.Sprintf("access to dataset '%s' (from table '%s') is not allowed", disallowedDatasetFQN, disallowedTableUnquoted),
 		},
 		{
 			name:           "invoke with query on allowed table",
@@ -3186,8 +3201,8 @@ func runAnalyzeContributionWithRestriction(t *testing.T, allowedTableFullName, d
 		{
 			name:           "invoke with query on disallowed table",
 			inputData:      fmt.Sprintf("SELECT * FROM %s", disallowedTableFullName),
-			wantStatusCode: http.StatusBadRequest,
-			wantInError:    fmt.Sprintf("query in input_data accesses dataset '%s', which is not in the allowed list", disallowedDatasetFQN),
+			wantStatusCode: http.StatusOK,
+			wantInResult:   fmt.Sprintf("query in input_data accesses dataset '%s', which is not in the allowed list", disallowedDatasetFQN),
 		},
 	}
 

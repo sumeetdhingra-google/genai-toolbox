@@ -231,7 +231,7 @@ func TestMcpEndpointWithoutInitialized(t *testing.T) {
 				"id":      "tools-call-tool4",
 				"error": map[string]any{
 					"code":    -32600.0,
-					"message": "unauthorized Tool call: Please make sure your specify correct auth headers: unauthorized",
+					"message": "unauthorized Tool call: Please make sure you specify correct auth headers",
 				},
 			},
 		},
@@ -320,7 +320,7 @@ func TestMcpEndpointWithoutInitialized(t *testing.T) {
 				Params: map[string]any{
 					"name": "prompt2",
 					"arguments": map[string]any{
-						"arg1": 42, // prompt2 expects a string, we send a number
+						"arg1": 42,
 					},
 				},
 			},
@@ -834,7 +834,7 @@ func TestMcpEndpoint(t *testing.T) {
 						"id":      "tools-call-tool4",
 						"error": map[string]any{
 							"code":    -32600.0,
-							"message": "unauthorized Tool call: Please make sure your specify correct auth headers: unauthorized",
+							"message": "unauthorized Tool call: Please make sure you specify correct auth headers",
 						},
 					},
 				},
@@ -1166,5 +1166,37 @@ func TestStdioSession(t *testing.T) {
 	want := fmt.Sprintf(`"%s"`, write) + "\n"
 	if read != want {
 		t.Fatalf("unexpected read: got %s, want %s", read, want)
+	}
+}
+
+func TestSseManagerGetNonExistentSession(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	m := newSseManager(ctx)
+
+	// Must not panic when session ID doesn't exist in the map.
+	session, ok := m.get("non-existent-id")
+	if ok {
+		t.Error("expected ok to be false for non-existent session")
+	}
+	if session != nil {
+		t.Error("expected nil session for non-existent ID")
+	}
+}
+
+func TestSseManagerGetNilSessionValue(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	m := newSseManager(ctx)
+	m.sseSessions["nil-session-id"] = nil
+
+	session, ok := m.get("nil-session-id")
+	if ok {
+		t.Error("expected ok to be false for nil session value")
+	}
+	if session != nil {
+		t.Error("expected nil session for nil session value")
 	}
 }

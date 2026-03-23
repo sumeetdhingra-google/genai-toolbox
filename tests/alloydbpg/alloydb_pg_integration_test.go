@@ -40,7 +40,7 @@ var (
 	AlloyDBPostgresInstance   = os.Getenv("ALLOYDB_POSTGRES_INSTANCE")
 	AlloyDBPostgresDatabase   = os.Getenv("ALLOYDB_POSTGRES_DATABASE")
 	AlloyDBPostgresUser       = os.Getenv("ALLOYDB_POSTGRES_USER")
-	AlloyDBPostgresPass       = os.Getenv("ALLOYDB_POSTGRES_PASS")
+	AlloyDBPostgresPass       = os.Getenv("ALLOYDB_POSTGRES_PASSWORD")
 )
 
 func getAlloyDBPgVars(t *testing.T) map[string]any {
@@ -58,7 +58,7 @@ func getAlloyDBPgVars(t *testing.T) map[string]any {
 	case AlloyDBPostgresUser:
 		t.Fatal("'ALLOYDB_POSTGRES_USER' not set")
 	case AlloyDBPostgresPass:
-		t.Fatal("'ALLOYDB_POSTGRES_PASS' not set")
+		t.Fatal("'ALLOYDB_POSTGRES_PASSWORD' not set")
 	}
 	return map[string]any{
 		"type":     AlloyDBPostgresSourceType,
@@ -129,13 +129,18 @@ func TestAlloyDBPgToolEndpoints(t *testing.T) {
 		t.Fatalf("unable to create AlloyDB connection pool: %s", err)
 	}
 
-	// cleanup test environment
-	tests.CleanupPostgresTables(t, ctx, pool)
+	// Generate a unique ID
+	uniqueID := strings.ReplaceAll(uuid.New().String(), "-", "")
 
-	// create table name with UUID
-	tableNameParam := "param_table_" + strings.ReplaceAll(uuid.New().String(), "-", "")
-	tableNameAuth := "auth_table_" + strings.ReplaceAll(uuid.New().String(), "-", "")
-	tableNameTemplateParam := "template_param_table_" + strings.ReplaceAll(uuid.New().String(), "-", "")
+	// This will execute after all tool tests complete (success, fail, or t.Fatal)
+	t.Cleanup(func() {
+		tests.CleanupPostgresTables(t, context.Background(), pool, uniqueID)
+	})
+
+	//Create table names using the UUID
+	tableNameParam := "param_table_" + uniqueID
+	tableNameAuth := "auth_table_" + uniqueID
+	tableNameTemplateParam := "template_param_table_" + uniqueID
 
 	// set up data for param tool
 	createParamTableStmt, insertParamTableStmt, paramToolStmt, idParamToolStmt, nameParamToolStmt, arrayToolStmt, paramTestParams := tests.GetPostgresSQLParamToolInfo(tableNameParam)
@@ -190,7 +195,7 @@ func TestAlloyDBPgToolEndpoints(t *testing.T) {
 	// Run Postgres prebuilt tool tests
 	tests.RunPostgresListTablesTest(t, tableNameParam, tableNameAuth, AlloyDBPostgresUser)
 	tests.RunPostgresListViewsTest(t, ctx, pool)
-	tests.RunPostgresListSchemasTest(t, ctx, pool)
+	tests.RunPostgresListSchemasTest(t, ctx, pool, AlloyDBPostgresUser, uniqueID)
 	tests.RunPostgresListActiveQueriesTest(t, ctx, pool)
 	tests.RunPostgresListAvailableExtensionsTest(t)
 	tests.RunPostgresListInstalledExtensionsTest(t)
@@ -210,6 +215,39 @@ func TestAlloyDBPgToolEndpoints(t *testing.T) {
 	tests.RunPostgresListDatabaseStatsTest(t, ctx, pool)
 	tests.RunPostgresListRolesTest(t, ctx, pool)
 	tests.RunPostgresListStoredProcedureTest(t, ctx, pool)
+}
+
+func TestAlloyDBPgPrebuiltStatementTools(t *testing.T) {
+	getAlloyDBPgVars(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	args := []string{"--prebuilt", "alloydb-postgres"}
+
+	cmd, cleanup, err := tests.StartCmd(ctx, map[string]any{}, args...)
+	if err != nil {
+		t.Fatalf("command initialization returned an error: %s", err)
+	}
+	defer cleanup()
+
+	waitCtx, cancelWait := context.WithTimeout(ctx, 10*time.Second)
+	defer cancelWait()
+	out, err := testutils.WaitForString(waitCtx, regexp.MustCompile(`Server ready to serve`), cmd.Out)
+	if err != nil {
+		t.Logf("toolbox command logs: \n%s", out)
+		t.Fatalf("toolbox didn't start successfully: %s", err)
+	}
+
+	toolsToTest := map[string]string{
+		"list_autovacuum_configurations": `{}`,
+		"list_memory_configurations":     `{}`,
+		"list_top_bloated_tables":        `{"limit": 10}`,
+		"list_replication_slots":         `{}`,
+		"list_invalid_indexes":           `{}`,
+		"get_query_plan":                 `{"query": "SELECT 1"}`,
+	}
+
+	tests.RunStatementToolsTest(t, toolsToTest)
 }
 
 // Test connection with different IP type

@@ -17,18 +17,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
-
-	"maps"
 	"text/template"
 
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
 	"github.com/googleapis/genai-toolbox/internal/tools"
+	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
 )
 
@@ -98,7 +98,7 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 	maps.Copy(combinedHeaders, cfg.Headers)
 
 	// Create a slice for all parameters
-	allParameters := slices.Concat(cfg.PathParams, cfg.BodyParams, cfg.HeaderParams, cfg.QueryParams)
+	allParameters := slices.Concat(cfg.PathParams, cfg.QueryParams, cfg.BodyParams, cfg.HeaderParams)
 
 	// Verify no duplicate parameter names
 	err := parameters.CheckDuplicateParameters(allParameters)
@@ -175,12 +175,26 @@ func getURL(baseURL, path string, pathParams, queryParams parameters.Parameters,
 		return "", fmt.Errorf("error replacing pathParams: %s", err)
 	}
 
+	baseParsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("error parsing base URL: %s", err)
+	}
+	if baseParsedURL.Scheme == "" || baseParsedURL.Host == "" {
+		return "", fmt.Errorf("base URL must include scheme and host")
+	}
+
+	relativePath := templatedPath.String()
+	relParsedURL, err := url.Parse(relativePath)
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL path: %s", err)
+	}
+	if relParsedURL.Scheme != "" || relParsedURL.Host != "" || relParsedURL.User != nil {
+		return "", fmt.Errorf("path must be relative and cannot override base host")
+	}
+
 	// Create URL based on BaseURL and Path
 	// Attach query parameters
-	parsedURL, err := url.Parse(baseURL + templatedPath.String())
-	if err != nil {
-		return "", fmt.Errorf("error parsing URL: %s", err)
-	}
+	parsedURL := baseParsedURL.ResolveReference(relParsedURL)
 
 	// Get existing query parameters from the URL
 	queryParameters := parsedURL.Query()
@@ -226,10 +240,10 @@ func getHeaders(headerParams parameters.Parameters, defaultHeaders map[string]st
 	return allHeaders, nil
 }
 
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
@@ -237,27 +251,35 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 	// Calculate request body
 	requestBody, err := getRequestBody(t.BodyParams, t.RequestBody, paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating request body: %s", err)
+		return nil, util.NewAgentError("error populating request body", err)
 	}
 
 	// Calculate URL
 	urlString, err := getURL(source.HttpBaseURL(), t.Path, t.PathParams, t.QueryParams, source.HttpQueryParams(), paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating path parameters: %s", err)
+		return nil, util.NewAgentError("error populating path parameters", err)
 	}
 
-	req, _ := http.NewRequest(string(t.Method), urlString, strings.NewReader(requestBody))
+	req, err := http.NewRequestWithContext(ctx, string(t.Method), urlString, strings.NewReader(requestBody))
+	if err != nil {
+		return nil, util.NewClientServerError("error creating http request", http.StatusInternalServerError, err)
+	}
 
 	// Calculate request headers
 	allHeaders, err := getHeaders(t.HeaderParams, t.Headers, paramsMap)
 	if err != nil {
-		return nil, fmt.Errorf("error populating request headers: %s", err)
+		return nil, util.NewAgentError("error populating request headers", err)
 	}
 	// Set request headers
 	for k, v := range allHeaders {
 		req.Header.Set(k, v)
 	}
-	return source.RunRequest(req)
+
+	resp, err := source.RunRequest(req)
+	if err != nil {
+		return nil, util.ProcessGeneralError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {

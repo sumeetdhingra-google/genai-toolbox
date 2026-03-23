@@ -17,6 +17,7 @@ package tools
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 
@@ -75,18 +76,45 @@ type ToolAnnotations struct {
 	ReadOnlyHint    *bool `json:"readOnlyHint,omitempty" yaml:"readOnlyHint,omitempty"`
 }
 
+// NewReadOnlyAnnotations creates default annotations for a read-only tool.
+// Use this for tools that only query/fetch data without side effects.
+func NewReadOnlyAnnotations() *ToolAnnotations {
+	readOnly := true
+	return &ToolAnnotations{ReadOnlyHint: &readOnly}
+}
+
+// NewDestructiveAnnotations creates default annotations for a destructive tool.
+// Use this for tools that create, update, or delete data.
+func NewDestructiveAnnotations() *ToolAnnotations {
+	readOnly := false
+	destructive := true
+	return &ToolAnnotations{
+		ReadOnlyHint:    &readOnly,
+		DestructiveHint: &destructive,
+	}
+}
+
+// GetAnnotationsOrDefault returns the provided annotations if non-nil,
+// otherwise returns the result of calling defaultFn.
+func GetAnnotationsOrDefault(annotations *ToolAnnotations, defaultFn func() *ToolAnnotations) *ToolAnnotations {
+	if annotations != nil {
+		return annotations
+	}
+	return defaultFn()
+}
+
 type AccessToken string
 
 func (token AccessToken) ParseBearerToken() (string, error) {
 	headerParts := strings.Split(string(token), " ")
 	if len(headerParts) != 2 || strings.ToLower(headerParts[0]) != "bearer" {
-		return "", fmt.Errorf("authorization header must be in the format 'Bearer <token>': %w", util.ErrUnauthorized)
+		return "", util.NewClientServerError("authorization header must be in the format 'Bearer <token>'", http.StatusUnauthorized, nil)
 	}
 	return headerParts[1], nil
 }
 
 type Tool interface {
-	Invoke(context.Context, SourceProvider, parameters.ParamValues, AccessToken) (any, error)
+	Invoke(context.Context, SourceProvider, parameters.ParamValues, AccessToken) (any, util.ToolboxError)
 	EmbedParams(context.Context, parameters.ParamValues, map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error)
 	Manifest() Manifest
 	McpManifest() McpManifest

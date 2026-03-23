@@ -18,12 +18,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
+	"cloud.google.com/go/geminidataanalytics/apiv1beta/geminidataanalyticspb"
 	"github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
 	"github.com/googleapis/genai-toolbox/internal/tools"
+	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const resourceType string = "cloud-gemini-data-analytics-query"
@@ -60,7 +64,49 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.T
 type compatibleSource interface {
 	GetProjectID() string
 	UseClientAuthorization() bool
-	RunQuery(context.Context, string, []byte) (any, error)
+	RunQuery(context.Context, string, *geminidataanalyticspb.QueryDataRequest) (*geminidataanalyticspb.QueryDataResponse, error)
+}
+
+// QueryDataContext wraps geminidataanalyticspb.QueryDataContext to support YAML decoding via protojson.
+type QueryDataContext struct {
+	*geminidataanalyticspb.QueryDataContext
+}
+
+func (q *QueryDataContext) UnmarshalYAML(b []byte) error {
+	var raw map[string]any
+	if err := yaml.Unmarshal(b, &raw); err != nil {
+		return fmt.Errorf("failed to unmarshal context from yaml: %w", err)
+	}
+	jsonBytes, err := json.Marshal(raw)
+	if err != nil {
+		return fmt.Errorf("failed to marshal context map: %w", err)
+	}
+	q.QueryDataContext = &geminidataanalyticspb.QueryDataContext{}
+	if err := protojson.Unmarshal(jsonBytes, q.QueryDataContext); err != nil {
+		return fmt.Errorf("failed to unmarshal context to proto: %w", err)
+	}
+	return nil
+}
+
+// GenerationOptions wraps geminidataanalyticspb.GenerationOptions to support YAML decoding via protojson.
+type GenerationOptions struct {
+	*geminidataanalyticspb.GenerationOptions
+}
+
+func (g *GenerationOptions) UnmarshalYAML(b []byte) error {
+	var raw map[string]any
+	if err := yaml.Unmarshal(b, &raw); err != nil {
+		return fmt.Errorf("failed to unmarshal generation options from yaml: %w", err)
+	}
+	jsonBytes, err := json.Marshal(raw)
+	if err != nil {
+		return fmt.Errorf("failed to marshal generation options map: %w", err)
+	}
+	g.GenerationOptions = &geminidataanalyticspb.GenerationOptions{}
+	if err := protojson.Unmarshal(jsonBytes, g.GenerationOptions); err != nil {
+		return fmt.Errorf("failed to unmarshal generation options to proto: %w", err)
+	}
+	return nil
 }
 
 type Config struct {
@@ -97,12 +143,14 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 	}
 	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
 
-	return Tool{
+	t := Tool{
 		Config:      cfg,
 		AllParams:   allParameters,
 		manifest:    tools.Manifest{Description: cfg.Description, Parameters: allParameters.Manifest(), AuthRequired: cfg.AuthRequired},
 		mcpManifest: mcpManifest,
-	}, nil
+	}
+
+	return t, nil
 }
 
 // validate interface
@@ -119,17 +167,16 @@ func (t Tool) ToConfig() tools.ToolConfig {
 	return t.Config
 }
 
-// Invoke executes the tool logic
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
 	query, ok := paramsMap["query"].(string)
 	if !ok {
-		return nil, fmt.Errorf("query parameter not found or not a string")
+		return nil, util.NewAgentError("query parameter not found or not a string", nil)
 	}
 
 	// Parse the access token if provided
@@ -138,25 +185,31 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 		var err error
 		tokenStr, err = accessToken.ParseBearerToken()
 		if err != nil {
-			return nil, fmt.Errorf("error parsing access token: %w", err)
+			return nil, util.NewClientServerError("error parsing access token", http.StatusUnauthorized, err)
 		}
 	}
 
 	// The parent in the request payload uses the tool's configured location.
 	payloadParent := fmt.Sprintf("projects/%s/locations/%s", source.GetProjectID(), t.Location)
 
-	payload := &QueryDataRequest{
-		Parent:            payloadParent,
-		Prompt:            query,
-		Context:           t.Context,
-		GenerationOptions: t.GenerationOptions,
+	req := &geminidataanalyticspb.QueryDataRequest{
+		Parent: payloadParent,
+		Prompt: query,
 	}
 
-	bodyBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request payload: %w", err)
+	if t.Context != nil {
+		req.Context = t.Context.QueryDataContext
 	}
-	return source.RunQuery(ctx, tokenStr, bodyBytes)
+
+	if t.GenerationOptions != nil {
+		req.GenerationOptions = t.GenerationOptions.GenerationOptions
+	}
+
+	resp, err := source.RunQuery(ctx, tokenStr, req)
+	if err != nil {
+		return nil, util.ProcessGcpError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {

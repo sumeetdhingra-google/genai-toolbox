@@ -17,12 +17,14 @@ package dataplexsearchentries
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"cloud.google.com/go/dataplex/apiv1/dataplexpb"
 	"github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
 	"github.com/googleapis/genai-toolbox/internal/tools"
+	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
 )
 
@@ -43,7 +45,7 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.T
 }
 
 type compatibleSource interface {
-	SearchEntries(context.Context, string, int, string) ([]*dataplexpb.SearchEntriesResult, error)
+	SearchEntries(context.Context, string, int, string, string) ([]*dataplexpb.SearchEntriesResult, error)
 }
 
 type Config struct {
@@ -63,9 +65,10 @@ func (cfg Config) ToolConfigType() string {
 
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
 	query := parameters.NewStringParameter("query", "The query against which entries in scope should be matched.")
+	scope := parameters.NewStringParameterWithDefault("scope", "", "A scope limits the search space to a particular project or organization. It must be in the format: organizations/<org_id> or projects/<project_id> or projects/<project_number>.")
 	pageSize := parameters.NewIntParameterWithDefault("pageSize", 5, "Number of results in the search page.")
 	orderBy := parameters.NewStringParameterWithDefault("orderBy", "relevance", "Specifies the ordering of results. Supported values are: relevance, last_modified_timestamp, last_modified_timestamp asc")
-	params := parameters.Parameters{query, pageSize, orderBy}
+	params := parameters.Parameters{query, scope, pageSize, orderBy}
 
 	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, params, nil)
 
@@ -93,16 +96,33 @@ func (t Tool) ToConfig() tools.ToolConfig {
 	return t.Config
 }
 
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 	paramsMap := params.AsMap()
-	query, _ := paramsMap["query"].(string)
-	pageSize, _ := paramsMap["pageSize"].(int)
-	orderBy, _ := paramsMap["orderBy"].(string)
-	return source.SearchEntries(ctx, query, pageSize, orderBy)
+	query, ok := paramsMap["query"].(string)
+	if !ok {
+		return nil, util.NewAgentError(fmt.Sprintf("error casting 'query' parameter: %v", paramsMap["query"]), nil)
+	}
+	pageSize, ok := paramsMap["pageSize"].(int)
+	if !ok {
+		return nil, util.NewAgentError(fmt.Sprintf("error casting 'pageSize' parameter: %v", paramsMap["pageSize"]), nil)
+	}
+	orderBy, ok := paramsMap["orderBy"].(string)
+	if !ok {
+		return nil, util.NewAgentError(fmt.Sprintf("error casting 'orderBy' parameter: %v", paramsMap["orderBy"]), nil)
+	}
+	scope, ok := paramsMap["scope"].(string)
+	if !ok {
+		return nil, util.NewAgentError(fmt.Sprintf("error casting 'scope' parameter: %v", paramsMap["scope"]), nil)
+	}
+	resp, err := source.SearchEntries(ctx, query, pageSize, orderBy, scope)
+	if err != nil {
+		return nil, util.ProcessGcpError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {
