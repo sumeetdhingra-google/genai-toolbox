@@ -10,18 +10,18 @@ aliases:
 
 ## About
 
-A `mysql-list-table-stats` tool checks table size, estimated rows count, total latency, rows fetched, rows inserted, rows udpdated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency.
-IO latency of reads and writes on table by querying the tables and table statitics in sys schema.
+A `mysql-list-table-stats` tool checks table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency.
+IO latency of reads and writes on table by querying the tables and table statistics in sys schema.
 
 Compatible sources:
 - [cloud-sql-mysql](../../sources/cloud-sql-mysql.md)
 - [mysql](../../sources/mysql.md)
 
-`mysql-list-table-stats` outputs detailed information about row counts, total latency and reads and writes on table since the MySQL instance was restarted as JSON. Results are sorted by total latency in secs in descreasing order and are limited to 10 rows.
+`mysql-list-table-stats` outputs detailed information about row counts, total latency and reads and writes on table since the MySQL instance was restarted as JSON. Results are sorted by total latency in secs in decreasing order and are limited to 10 rows.
 This tool takes 4 optional input parameters:
 
-- `table_schema` (optional): The database where fragmentation check is to be
-  executed. Check all tables visible to the current user if not specified.
+- `table_schema` (optional): The database where table stats check is to be
+  executed. Check all tables visible to the current database if not specified.
 - `table_name` (optional): Name of the table to be checked. Check all tables
   visible to the current user if not specified.
 - `sort_by` (optional): The column to sort by. Valid values are `row_count`, `rows_fetched`, `rows_inserted`, `rows_updated`, `rows_deleted`, `total_latency_secs` (defaults to `total_latency_secs`)
@@ -34,7 +34,7 @@ kind: tools
 name: list_table_stats
 type: mysql-list-table-stats
 source: my-mysql-instance
-description: Display table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table. Specifying a database name or table name filters the output to that specific db or table. Results are limited to 50 by default, with a maximum allowable limit of 1000.
+description: Display table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table. Specifying a database name or table name filters the output to that specific db or table. Results are limited to 10 by default, with a maximum allowable limit of 1000.
 ```
 
 The response is a json array with the following fields:
