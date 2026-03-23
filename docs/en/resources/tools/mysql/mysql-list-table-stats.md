@@ -40,7 +40,8 @@ description: Display table statistics including table size, total latency, rows 
 The response is a json array with the following fields:
 
 ```json
-{
+[
+  {
   "table_schema": "The schema/database this table belongs to",
   "table_name": "Name of this table",
   "size_MB": "Size of the table data in MB",
@@ -54,7 +55,8 @@ The response is a json array with the following fields:
   "io_read_latency": "io read latency in seconds",
   "io_write_latency": "io write latency in seconds",
   "io_misc_latency": "io misc latency in seconds",
-}
+  }
+]
 ```
 
 ## prerequisite
