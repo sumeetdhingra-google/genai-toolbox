@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
@@ -53,7 +54,7 @@ FROM
   ON (t.table_schema = ts.table_schema AND t.table_name = ts.table_name)
 WHERE
   t.table_schema NOT IN ('sys', 'information_schema', 'mysql', 'performance_schema')
-  AND t.table_schema = IFNULL(?,DATABASE())
+  AND t.table_schema = ?
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY 
   CASE
@@ -62,7 +63,7 @@ ORDER BY
   	WHEN ? = 'rows_inserted' THEN rows_inserted
   	WHEN ? = 'rows_updated' THEN rows_updated
   	WHEN ? = 'rows_deleted' THEN rows_deleted
-  	ELSE total_latency_secs
+  	ELSE ts.total_latency
   END DESC
 LIMIT ?;
 `
@@ -103,7 +104,7 @@ func (cfg Config) ToolConfigType() string {
 
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
 	allParameters := parameters.Parameters{
-		parameters.NewStringParameterWithDefault("table_schema", "", "(Optional) The database where statistics  is to be executed. Check all tables visible to the current user if not specified"),
+		parameters.NewStringParameterWithDefault("table_schema", "DATABASE()", "(Optional) The database where statistics  is to be executed. Check all tables visible to the current user if not specified"),
 		parameters.NewStringParameterWithDefault("table_name", "", "(Optional) Name of the table to be checked. Check all tables visible to the current user if not specified."),
 		parameters.NewStringParameterWithDefault("sort_by", "", "(Optional) The column to sort by"),
 		parameters.NewIntParameterWithDefault("limit", 10, "(Optional) Max rows to return, default is 10"),
@@ -130,39 +131,43 @@ type Tool struct {
 	mcpManifest tools.McpManifest
 }
 
-func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, error) {
+func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, params parameters.ParamValues, accessToken tools.AccessToken) (any, util.ToolboxError) {
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
-		return nil, err
+		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
 	}
 
 	paramsMap := params.AsMap()
 
 	table_schema, ok := paramsMap["table_schema"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid 'table_schema' parameter; expected a string")
+		return nil, util.NewAgentError("invalid 'table_schema' parameter; expected a string", nil)
 	}
 	table_name, ok := paramsMap["table_name"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid 'table_name' parameter; expected a string")
+		return nil, util.NewAgentError("invalid 'table_name' parameter; expected a string", nil)
 	}
 	sort_by, ok := paramsMap["sort_by"].(string)
-        if !ok {
-                return nil, fmt.Errorf("invalid 'sort_by' parameter; expected a string")
-        }
+	if !ok {
+		return nil, util.NewAgentError("invalid 'sort_by' parameter; expected a string", nil)
+	}
 	limit, ok := paramsMap["limit"].(int)
 	if !ok {
-		return nil, fmt.Errorf("invalid 'limit' parameter; expected an integer")
+		return nil, util.NewAgentError("invalid 'limit' parameter; expected an integer", nil)
 	}
 
 	// Log the query executed for debugging.
 	logger, err := util.LoggerFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error getting logger: %s", err)
+		return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
 	}
 	logger.DebugContext(ctx, fmt.Sprintf("executing `%s` tool query: %s", resourceType, listTableStatsStatement))
 	sliceParams := []any{table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
-	return source.RunSQL(ctx, listTableStatsStatement, sliceParams)
+	resp, err := source.RunSQL(ctx, listTableStatsStatement, sliceParams)
+	if err != nil {
+		return nil, util.ProcessGeneralError(err)
+	}
+	return resp, nil
 }
 
 func (t Tool) EmbedParams(ctx context.Context, paramValues parameters.ParamValues, embeddingModelsMap map[string]embeddingmodels.EmbeddingModel) (parameters.ParamValues, error) {
