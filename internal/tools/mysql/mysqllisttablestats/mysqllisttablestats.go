@@ -54,7 +54,7 @@ FROM
   ON (t.table_schema = ts.table_schema AND t.table_name = ts.table_name)
 WHERE
   t.table_schema NOT IN ('sys', 'information_schema', 'mysql', 'performance_schema')
-  AND t.table_schema = ?
+    AND t.table_schema = IFNULL(?,DATABASE())
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY 
   CASE
@@ -104,7 +104,7 @@ func (cfg Config) ToolConfigType() string {
 
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
 	allParameters := parameters.Parameters{
-		parameters.NewStringParameterWithDefault("table_schema", "DATABASE()", "(Optional) The database where statistics  is to be executed. Check all tables visible to the current user if not specified"),
+		parameters.NewStringParameterWithDefault("table_schema", "", "(Optional) The database where statistics  is to be executed. Check all tables visible to the current user if not specified"),
 		parameters.NewStringParameterWithDefault("table_name", "", "(Optional) Name of the table to be checked. Check all tables visible to the current user if not specified."),
 		parameters.NewStringParameterWithDefault("sort_by", "", "(Optional) The column to sort by"),
 		parameters.NewIntParameterWithDefault("limit", 10, "(Optional) Max rows to return, default is 10"),
