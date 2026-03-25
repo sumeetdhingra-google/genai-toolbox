@@ -882,7 +882,7 @@ func TestCloudSQLMySQL_IPTypeParsingFromYAML(t *testing.T) {
 		{
 			desc: "IPType Defaulting to Public",
 			in: `
-			kind: sources
+			kind: source
 			name: my-mysql-instance
 			type: cloud-sql-mysql
 			project: my-project
@@ -909,7 +909,7 @@ func TestCloudSQLMySQL_IPTypeParsingFromYAML(t *testing.T) {
 		{
 			desc: "IPType Explicit Public",
 			in: `
-			kind: sources
+			kind: source
 			name: my-mysql-instance
 			type: cloud-sql-mysql
 			project: my-project
@@ -937,7 +937,7 @@ func TestCloudSQLMySQL_IPTypeParsingFromYAML(t *testing.T) {
 		{
 			desc: "IPType Explicit Private",
 			in: `
-			kind: sources
+			kind: source
 			name: my-mysql-instance
 			type: cloud-sql-mysql
 			project: my-project
