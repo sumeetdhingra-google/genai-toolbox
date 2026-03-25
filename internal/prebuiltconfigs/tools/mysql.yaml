@@ -59,7 +59,6 @@ toolsets:
   data:
     - execute_sql
     - list_tables
-    - list_table_stats
     - get_query_plan
     - list_active_queries
   monitor:
@@ -67,3 +66,4 @@ toolsets:
     - list_active_queries
     - list_table_fragmentation
     - list_tables_missing_unique_indexes
+    - list_table_stats
