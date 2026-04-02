@@ -7741,7 +7741,7 @@ returned. Otherwise, the selection is not guaranteed.&lt;/p>
 &lt;p>The tool returns a single JSON object representing the document, wrapped in a
 JSON array.&lt;/p>
 &lt;h2 id="compatible-sources">Compatible Sources&lt;/h2>
-&lt;h2 id="hahahugoshortcode341s0hbhb">
+&lt;h2 id="hahahugoshortcode340s0hbhb">
 
 
 
@@ -18077,8 +18077,7 @@ weight: 1
 description: &amp;gt;
 A &amp;ldquo;&amp;ldquo;mysql-list-table-stats&amp;rdquo;&amp;rdquo; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.&lt;/h2>
 &lt;h2 id="about">About&lt;/h2>
-&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool checks table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency.
-IO latency of reads and writes on table by querying the tables and table statistics in sys schema.&lt;/p></description></item><item><title>AlloyDB Omni</title><link>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</guid><description>&lt;h2 id="alloydb-omni">AlloyDB Omni&lt;/h2>
+&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.&lt;/p></description></item><item><title>AlloyDB Omni</title><link>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</guid><description>&lt;h2 id="alloydb-omni">AlloyDB Omni&lt;/h2>
 &lt;ul>
 &lt;li>&lt;code>--prebuilt&lt;/code> value: &lt;code>alloydb-omni&lt;/code>&lt;/li>
 &lt;li>&lt;strong>Environment Variables:&lt;/strong>

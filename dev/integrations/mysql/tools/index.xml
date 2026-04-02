@@ -281,5 +281,4 @@ weight: 1
 description: &amp;gt;
 A &amp;ldquo;&amp;ldquo;mysql-list-table-stats&amp;rdquo;&amp;rdquo; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.&lt;/h2>
 &lt;h2 id="about">About&lt;/h2>
-&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool checks table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency.
-IO latency of reads and writes on table by querying the tables and table statistics in sys schema.&lt;/p></description></item></channel></rss>
+&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.&lt;/p></description></item></channel></rss>
