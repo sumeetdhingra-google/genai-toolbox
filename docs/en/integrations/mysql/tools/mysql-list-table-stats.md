@@ -8,10 +8,10 @@ description: >
 
 ## About
 
-A `mysql-list-table-stats` tool checks table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency.
-IO latency of reads and writes on table by querying the tables and table statistics in sys schema.
+A `mysql-list-table-stats` tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.
 
-`mysql-list-table-stats` outputs detailed information about row counts, total latency and reads and writes on table since the MySQL instance was restarted as JSON. Results are sorted by total latency in secs in decreasing order and are limited to 10 rows.
+`mysql-list-table-stats` outputs detailed overview of table level resource consumption including estimated row counts, table size, a complete breakdown of CRUD activity (rows fetched, inserted, updated, and deleted) and table level IO statistics such as total latency, read latency, write latency and misc latency. The output is a JSON formatted array of the top 10 MySQL tables ranked by total latency. 
+
 This tool takes 4 optional input parameters:
 
 - `table_schema` (optional): The database where table stats check is to be
