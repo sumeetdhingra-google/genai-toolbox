@@ -65,6 +65,10 @@ features with a focus on performance and reliability.&lt;/p>
  
  
  
+ 
+ 
+ 
+ 
 
  
 
@@ -125,6 +129,11 @@ features with a focus on performance and reliability.&lt;/p>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-sql/">&lt;strong>mysql-sql&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>A &amp;#34;mysql-sql&amp;#34; tool executes a pre-defined SQL statement against a MySQL database.
 &lt;/td>
+ &lt;/tr>
+ 
+ &lt;tr>
+ &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>&lt;/strong>&lt;/a>&lt;/td>
+ &lt;td>No description provided.&lt;/td>
  &lt;/tr>
  
  &lt;/tbody>
