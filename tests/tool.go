@@ -3326,7 +3326,7 @@ func RunMySQLListTablesMissingUniqueIndexes(t *testing.T, ctx context.Context, p
 	}
 }
 
-func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB) {
+func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB, databaseName string, tableNameParam string, tableNameAuth string) {
 	type tableStatsDetails struct {
 		TableSchema             string `json:"table_schema"`
 		TableName               string `json:"table_name"`
@@ -3342,40 +3342,38 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB)
 		IOWriteLatency          any    `json:"io_write_latency"`
 		IOMiscLatency           any    `json:"io_misc_latency"`
 	}
-	schemaName := "testschema_" + strings.ReplaceAll(uuid.New().String(), "-", "")
-	tableNoWorkloadName := "t01_no_workload_table"
-	tableWithWorkloadName := "t02_with_workload_table"
-	tableNoWorkloadWant := tableStatsDetails{
-		TableSchema:             schemaName,
-		TableName:               tableNoWorkloadName,
-		DataSize:                any(nil),
-		RowCount:                any(nil),
-		TotalLatency:            any(nil),
-		RowsFetched:             any(nil),
-		RowsInserted:            any(nil),
-		RowsUpdated:             any(nil),
-		RowsDeleted:             any(nil),
-		IOReads:                 any(nil),
-		IOReadLatency:           any(nil),
-		IOWriteLatency:          any(nil),
-		IOMiscLatency:           any(nil),
-	}
-	tableWithWorkloadWant := tableStatsDetails{
-		TableSchema:             schemaName,
-		TableName:               tableWithWorkloadName,
-		DataSize:                any(nil),
-		RowCount:                any(nil),
-		TotalLatency:            any(nil),
-		RowsFetched:             any(nil),
-		RowsInserted:            any(nil),
-		RowsUpdated:             any(nil),
-		RowsDeleted:             any(nil),
-		IOReads:                 any(nil),
-		IOReadLatency:           any(nil),
-		IOWriteLatency:          any(nil),
-		IOMiscLatency:           any(nil),
-	}
 	
+	paramTableEntryWanted := tableStatsDetails{
+		TableSchema:             databaseName,
+		TableName:               tableNameParam,
+		DataSize:                any(nil),
+		RowCount:                any(nil),
+		TotalLatency:            any(nil),
+		RowsFetched:             any(nil),
+		RowsInserted:            any(nil),
+		RowsUpdated:             any(nil),
+		RowsDeleted:             any(nil),
+		IOReads:                 any(nil),
+		IOReadLatency:           any(nil),
+		IOWriteLatency:          any(nil),
+		IOMiscLatency:           any(nil),
+	}
+    authTableEntryWanted := tableStatsDetails{
+		TableSchema:             databaseName,
+		TableName:               tableNameAuth,
+		DataSize:                any(nil),
+		RowCount:                any(nil),
+		TotalLatency:            any(nil),
+		RowsFetched:             any(nil),
+		RowsInserted:            any(nil),
+		RowsUpdated:             any(nil),
+		RowsDeleted:             any(nil),
+		IOReads:                 any(nil),
+		IOReadLatency:           any(nil),
+		IOWriteLatency:          any(nil),
+		IOMiscLatency:           any(nil),
+	}
+
 	invokeTcs := []struct {
     	name           string
         requestBody    io.Reader
@@ -3383,28 +3381,28 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB)
         want           any
 		}{
 			{
-				name:           "invoke list_table_stats with no arguments, expected nil",
+				name:           "invoke list_table_stats with no arguments, expected 2 results",
 				requestBody:    bytes.NewBufferString(`{}`),
 				wantStatusCode: http.StatusOK,
-				want:           []tableStatsDetails(nil),
+				want:           []tableStatsDetails{paramTableEntryWanted,authTableEntryWanted},
 			},
 			{
-				name:           "invoke list_table_stats with only specific table name, expected nil",
-				requestBody:    bytes.NewBufferString(`{"limit": 1}`),
-				wantStatusCode: http.StatusOK,
+				name:           "invoke list_table_stats with schema other than connected to, expected log error and nil results",
+				requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s"}`, "testdb")),
+				wantStatusCode: http.StatusInternalServerError,
 				want:           []tableStatsDetails(nil),
 			},
 			{
 				name:           "invoke list_table_stats on 1 database and all tables, expected to have 2 result",
-				requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s"}`, schemaName)),
+				requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s"}`, databaseName)),
 				wantStatusCode: http.StatusOK,
-				want:           []tableStatsDetails{tableWithWorkloadWant, tableNoWorkloadWant},
+				want:           []tableStatsDetails{paramTableEntryWanted,authTableEntryWanted},
 			},
 			{
 				name:           "invoke list_table_stats on 1 database and 1 specific table name, expected to have 1 result",
-				requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s", "table_name": "%s"}`, schemaName, tableNoWorkloadName)),
+				requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s", "table_name": "%s"}`, databaseName, tableNameAuth)),
 				wantStatusCode: http.StatusOK,
-				want:           []tableStatsDetails{tableNoWorkloadWant},
+				want:           []tableStatsDetails{authTableEntryWanted},
 			},
 			{
 				name:           "invoke list_table_stats on 1 non-exist table on 1 database, expected to have 0 result",
@@ -3412,64 +3410,15 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB)
 				wantStatusCode: http.StatusOK,
 				want:           []tableStatsDetails(nil),
 			},
-        }
-
-
-        // Create DB
-        createDBStmt := fmt.Sprintf(`create database %s`,schemaName)
-
-        if _, err := pool.ExecContext(ctx, createDBStmt); err != nil {
-			t.Fatalf("unable to create database table %s: %s", schemaName, err)
 		}
 
-                defer func(schemaName string) {
-                        dropDBStmt := fmt.Sprintf("DROP DATABASE IF EXISTS %s", schemaName)
-                        if _, err := pool.ExecContext(ctx, dropDBStmt); err != nil {
-                                t.Logf("warning: unable to drop database %s: %v", schemaName, err)
-                        }
-                }(schemaName)
-
-
-
-        // Create tables
-        tableNames := []string{tableNoWorkloadName, tableWithWorkloadName}
-        for _, tableName := range tableNames {
-                createTableStmt := fmt.Sprintf(`
-        CREATE TABLE %s.%s (
-            c1 int,
-            c2 VARCHAR(100)
-        )`, schemaName, tableName)
-
-            if _, err := pool.ExecContext(ctx, createTableStmt); err != nil {
-                        t.Fatalf("unable to create test table %s: %s", tableName, err)
-                }
-
-                defer func(tn string) {
-                        dropTableStmt := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s", schemaName, tableName)
-                        if _, err := pool.ExecContext(ctx, dropTableStmt); err != nil {
-                                t.Logf("warning: unable to drop test table %s: %v", tableName, err)
-                        }
-                }(tableName)
-        }
-
-        // Insert data into tableWithWorkload
-        insertStmt := fmt.Sprintf(`
-                INSERT INTO %s.%s (c1, c2) VALUES
-                (1, 'test_row1'),
-                (2, 'test_row2'),
-                (3, 'test_row3'),
-                (4, 'test_row4'),
-                (5, 'test_row5'),
-                (6, 'test_row6'),
-                (7, 'test_row7'),
-                (8, 'test_row8'),
-                (9, 'test_row9'),
-                (10, 'test_row10')
-        `, schemaName, tableWithWorkloadName)
-
-        if _, err := pool.ExecContext(ctx, insertStmt); err != nil {
-                t.Fatalf("unable to insert data into %s: %s", tableWithWorkloadName, err)
-        }
+		// Generating additional stats for tableNameParam
+		for i := 0; i < 3; i++ {
+			selectStmt := fmt.Sprintf("SELECT * FROM %s", tableNameParam)
+			if _, err := pool.ExecContext(ctx, selectStmt); err != nil {
+				t.Logf("warning: unable to execute select: %v", err)
+			}
+		}
 
 
         for _, tc := range invokeTcs {

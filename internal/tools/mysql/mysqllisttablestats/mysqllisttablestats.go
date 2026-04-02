@@ -19,6 +19,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
@@ -54,16 +55,16 @@ FROM
   ON (t.table_schema = ts.table_schema AND t.table_name = ts.table_name)
 WHERE
   t.table_schema NOT IN ('sys', 'information_schema', 'mysql', 'performance_schema')
-    AND t.table_schema = IFNULL(?,DATABASE())
+  AND (COALESCE(?, '') = '' OR t.table_schema = ?)
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY 
   CASE
-          WHEN ? = 'row_count' THEN row_count
-          WHEN ? = 'rows_fetched' THEN rows_fetched
-          WHEN ? = 'rows_inserted' THEN rows_inserted
-          WHEN ? = 'rows_updated' THEN rows_updated
-          WHEN ? = 'rows_deleted' THEN rows_deleted
-          ELSE ts.total_latency
+	WHEN ? = 'row_count' THEN row_count
+	WHEN ? = 'rows_fetched' THEN rows_fetched
+	WHEN ? = 'rows_inserted' THEN rows_inserted
+  	WHEN ? = 'rows_updated' THEN rows_updated
+  	WHEN ? = 'rows_deleted' THEN rows_deleted
+  	ELSE ts.total_latency
   END DESC
 LIMIT ?;
 `
@@ -167,6 +168,13 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 	if err != nil {
 			return nil, util.ProcessGeneralError(err)
 	}
+	connected_schema := os.Getenv("MYSQL_DATABASE")
+	if table_schema != connected_schema && table_schema != ""  {
+		log.Printf("schema not matching")
+		err := fmt.Errorf("error: connected schema '%s' does not match queried schema '%s'", connected_schema, table_schema)
+	return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
+	}
+
 	return resp, nil
 }
 
