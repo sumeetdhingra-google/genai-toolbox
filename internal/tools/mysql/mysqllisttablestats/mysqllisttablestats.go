@@ -163,16 +163,15 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 			return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
 	}
 	logger.DebugContext(ctx, fmt.Sprintf("executing `%s` tool query: %s", resourceType, listTableStatsStatement))
-	sliceParams := []any{table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
+	sliceParams := []any{table_schema, table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
 	resp, err := source.RunSQL(ctx, listTableStatsStatement, sliceParams)
 	if err != nil {
 			return nil, util.ProcessGeneralError(err)
 	}
 	connected_schema := os.Getenv("MYSQL_DATABASE")
 	if table_schema != connected_schema && table_schema != ""  {
-		log.Printf("schema not matching")
 		err := fmt.Errorf("error: connected schema '%s' does not match queried schema '%s'", connected_schema, table_schema)
-	return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
+		return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
 	}
 
 	return resp, nil

@@ -3358,7 +3358,8 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB,
 		IOWriteLatency:          any(nil),
 		IOMiscLatency:           any(nil),
 	}
-    authTableEntryWanted := tableStatsDetails{
+	
+	authTableEntryWanted := tableStatsDetails{
 		TableSchema:             databaseName,
 		TableName:               tableNameAuth,
 		DataSize:                any(nil),
@@ -3411,7 +3412,7 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB,
 				want:           []tableStatsDetails(nil),
 			},
 		}
-
+		
 		// Generating additional stats for tableNameParam
 		for i := 0; i < 3; i++ {
 			selectStmt := fmt.Sprintf("SELECT * FROM %s", tableNameParam)
