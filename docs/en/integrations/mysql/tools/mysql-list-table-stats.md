@@ -1,9 +1,9 @@
-"---
-title: ""mysql-list-table-stats""
+---
+title: "mysql-list-table-stats"
 type: docs
 weight: 1
 description: >
-  A ""mysql-list-table-stats"" tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
+  A "mysql-list-table-stats" tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
 ---
 
 ## About
@@ -38,19 +38,19 @@ The response is a json array with the following fields:
 ```json
 [
   {
-  ""table_schema"": ""The schema/database this table belongs to"",
-  ""table_name"": ""Name of this table"",
-  ""size_MB"": ""Size of the table data in MB"",
-  ""row_count"": ""Number of rows in the table"",
-  ""total_latency_secs"": ""total latency in secs"",
-  ""rows_fetched"": ""total number of rows fetched"",
-  ""rows_inserted"": ""total number of rows inserted"",
-  ""rows_updated"": ""total number of rows updated"",
-  ""rows_deleted"": ""total number of rows deleted"",
-  ""io_reads"": ""total number of io read requests"",
-  ""io_read_latency"": ""io read latency in seconds"",
-  ""io_write_latency"": ""io write latency in seconds"",
-  ""io_misc_latency"": ""io misc latency in seconds"",
+  "table_schema": "The schema/database this table belongs to",
+  "table_name": "Name of this table",
+  "size_MB": "Size of the table data in MB",
+  "row_count": "Number of rows in the table",
+  "total_latency_secs": "total latency in secs",
+  "rows_fetched": "total number of rows fetched",
+  "rows_inserted": "total number of rows inserted",
+  "rows_updated": "total number of rows updated",
+  "rows_deleted": "total number of rows deleted",
+  "io_reads": "total number of io read requests",
+  "io_read_latency": "io read latency in seconds",
+  "io_write_latency": "io write latency in seconds",
+  "io_misc_latency": "io misc latency in seconds",
   }
 ]
 ```
@@ -63,7 +63,7 @@ The response is a json array with the following fields:
 
 | **field**   | **type** | **required** | **description**                                    |
 |-------------|:--------:|:------------:|----------------------------------------------------|
-| type        |  string  |     true     | Must be ""mysql-list-table-stats"".                  |
+| type        |  string  |     true     | Must be "mysql-list-table-stats".                  |
 | source      |  string  |     true     | Name of the source the SQL should execute on.      |
 | description |  string  |     true     | Description of the tool that is passed to the LLM. |
 
