@@ -8233,7 +8233,9 @@ comparing with free space allocated to each table. This tool calculates
 relative to the total data and index size.&lt;/p>
 &lt;p>&lt;code>mysql-list-table-fragmentation&lt;/code> outputs detailed information as JSON , ordered
 by the fragmentation percentage in descending order.
-This tool takes 4 optional input parameters:&lt;/p></description></item><item><title>mysql-list-tables</title><link>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/</guid><description>&lt;h2 id="about">About&lt;/h2>
+This tool takes 4 optional input parameters:&lt;/p></description></item><item><title>mysql-list-table-stats</title><link>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/</guid><description>&lt;h2 id="about">About&lt;/h2>
+&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.&lt;/p>
+&lt;p>&lt;code>mysql-list-table-stats&lt;/code> outputs detailed overview of table level resource consumption including estimated row counts, table size, a complete breakdown of CRUD activity (rows fetched, inserted, updated, and deleted) and table level IO statistics such as total latency, read latency, write latency and misc latency. The output is a JSON formatted array of the top 10 MySQL tables ranked by total latency.&lt;/p></description></item><item><title>mysql-list-tables</title><link>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/</guid><description>&lt;h2 id="about">About&lt;/h2>
 &lt;p>The &lt;code>mysql-list-tables&lt;/code> tool retrieves schema information for all or specified
 tables in a MySQL database.&lt;/p>
 &lt;p>&lt;code>mysql-list-tables&lt;/code> lists detailed schema information (object type, columns,
@@ -12624,6 +12626,12 @@ features with a focus on performance and reliability.&lt;/p>
  &lt;/tr>
  
  &lt;tr>
+ &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>mysql-list-table-stats&lt;/strong>&lt;/a>&lt;/td>
+ &lt;td>A &amp;#34;mysql-list-table-stats&amp;#34; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
+&lt;/td>
+ &lt;/tr>
+ 
+ &lt;tr>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/">&lt;strong>mysql-list-tables&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>The &amp;#34;mysql-list-tables&amp;#34; tool lists schema information for all or specified tables in a MySQL database.
 &lt;/td>
@@ -12639,11 +12647,6 @@ features with a focus on performance and reliability.&lt;/p>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-sql/">&lt;strong>mysql-sql&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>A &amp;#34;mysql-sql&amp;#34; tool executes a pre-defined SQL statement against a MySQL database.
 &lt;/td>
- &lt;/tr>
- 
- &lt;tr>
- &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>&lt;/strong>&lt;/a>&lt;/td>
- &lt;td>No description provided.&lt;/td>
  &lt;/tr>
  
  &lt;/tbody>
@@ -12994,6 +12997,12 @@ reliability, performance, and ease of use.&lt;/p>
  &lt;/tr>
  
  &lt;tr>
+ &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>mysql-list-table-stats&lt;/strong>&lt;/a>&lt;/td>
+ &lt;td>A &amp;#34;mysql-list-table-stats&amp;#34; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
+&lt;/td>
+ &lt;/tr>
+ 
+ &lt;tr>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/">&lt;strong>mysql-list-tables&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>The &amp;#34;mysql-list-tables&amp;#34; tool lists schema information for all or specified tables in a MySQL database.
 &lt;/td>
@@ -13009,11 +13018,6 @@ reliability, performance, and ease of use.&lt;/p>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-sql/">&lt;strong>mysql-sql&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>A &amp;#34;mysql-sql&amp;#34; tool executes a pre-defined SQL statement against a MySQL database.
 &lt;/td>
- &lt;/tr>
- 
- &lt;tr>
- &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>&lt;/strong>&lt;/a>&lt;/td>
- &lt;td>No description provided.&lt;/td>
  &lt;/tr>
  
  &lt;/tbody>
@@ -18070,14 +18074,7 @@ NL to SQL capabilities in agentic applications.&lt;/p>
 &lt;p>For detailed information on the AlloyDB capability, please see &lt;a href="https://cloud.google.com/alloydb/docs/ai/natural-language-overview">AlloyDB AI
 Natural Language Overview&lt;/a>.&lt;/p>
 &lt;h2 id="before-you-begin">Before you Begin&lt;/h2>
-&lt;p>Complete the before you begin setup from &lt;a href="https://cloud.google.com/alloydb/docs/ai/use-natural-language-generate-sql-queries#before-you-begin">Use AlloyDB AI natural language to generate SQL&lt;/a>.&lt;/p></description></item><item><title/><link>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/</guid><description>&lt;h2 id="a-mysql-list-table-stats-tool-report-table-statistics-including-table-size-total-latency-rows-read-rows-written-read-and-write-latency-for-entire-instance-a-specified-database-or-a-specified-table">&amp;ldquo;&amp;mdash;
-title: &amp;ldquo;&amp;ldquo;mysql-list-table-stats&amp;rdquo;&amp;rdquo;
-type: docs
-weight: 1
-description: &amp;gt;
-A &amp;ldquo;&amp;ldquo;mysql-list-table-stats&amp;rdquo;&amp;rdquo; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.&lt;/h2>
-&lt;h2 id="about">About&lt;/h2>
-&lt;p>A &lt;code>mysql-list-table-stats&lt;/code> tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.&lt;/p></description></item><item><title>AlloyDB Omni</title><link>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</guid><description>&lt;h2 id="alloydb-omni">AlloyDB Omni&lt;/h2>
+&lt;p>Complete the before you begin setup from &lt;a href="https://cloud.google.com/alloydb/docs/ai/use-natural-language-generate-sql-queries#before-you-begin">Use AlloyDB AI natural language to generate SQL&lt;/a>.&lt;/p></description></item><item><title>AlloyDB Omni</title><link>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://mcp-toolbox.dev/dev/integrations/postgres/prebuilt-configs/alloydb-omni/</guid><description>&lt;h2 id="alloydb-omni">AlloyDB Omni&lt;/h2>
 &lt;ul>
 &lt;li>&lt;code>--prebuilt&lt;/code> value: &lt;code>alloydb-omni&lt;/code>&lt;/li>
 &lt;li>&lt;strong>Environment Variables:&lt;/strong>

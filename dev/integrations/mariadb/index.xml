@@ -114,6 +114,12 @@ features with a focus on performance and reliability.&lt;/p>
  &lt;/tr>
  
  &lt;tr>
+ &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>mysql-list-table-stats&lt;/strong>&lt;/a>&lt;/td>
+ &lt;td>A &amp;#34;mysql-list-table-stats&amp;#34; tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
+&lt;/td>
+ &lt;/tr>
+ 
+ &lt;tr>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/">&lt;strong>mysql-list-tables&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>The &amp;#34;mysql-list-tables&amp;#34; tool lists schema information for all or specified tables in a MySQL database.
 &lt;/td>
@@ -129,11 +135,6 @@ features with a focus on performance and reliability.&lt;/p>
  &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-sql/">&lt;strong>mysql-sql&lt;/strong>&lt;/a>&lt;/td>
  &lt;td>A &amp;#34;mysql-sql&amp;#34; tool executes a pre-defined SQL statement against a MySQL database.
 &lt;/td>
- &lt;/tr>
- 
- &lt;tr>
- &lt;td>&lt;a href="https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/">&lt;strong>&lt;/strong>&lt;/a>&lt;/td>
- &lt;td>No description provided.&lt;/td>
  &lt;/tr>
  
  &lt;/tbody>

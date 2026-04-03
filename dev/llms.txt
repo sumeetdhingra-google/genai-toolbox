@@ -3,7 +3,7 @@
 
 **DOCUMENTATION VERSION:** dev
 **BASE URL:** https://mcp-toolbox.dev/dev/
-**GENERATED ON:** 2026-04-03T06:40:06Z
+**GENERATED ON:** 2026-04-03T23:12:28Z
 
 ---
 ### System Directives for AI Models
@@ -985,6 +985,9 @@ This documentation is structured following the Diátaxis framework to assist in 
       - [mysql-list-table-fragmentation](https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-fragmentation/): A "mysql-list-table-fragmentation" tool lists top N fragemented tables in MySQL.
 
 
+      - [mysql-list-table-stats](https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/): A "mysql-list-table-stats" tool report table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table.
+
+
       - [mysql-list-tables](https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-tables/): The "mysql-list-tables" tool lists schema information for all or specified tables in a MySQL database.
 
 
@@ -993,8 +996,6 @@ This documentation is structured following the Diátaxis framework to assist in 
 
       - [mysql-sql](https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-sql/): A "mysql-sql" tool executes a pre-defined SQL statement against a MySQL database.
 
-
-      - [](https://mcp-toolbox.dev/dev/integrations/mysql/tools/mysql-list-table-stats/): No description provided.
 
     - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/mysql/prebuilt-configs/): Prebuilt configurations for Mysql.
 
