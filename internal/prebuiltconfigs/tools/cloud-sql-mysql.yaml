@@ -36,6 +36,10 @@ tools:
     kind: mysql-list-active-queries
     source: cloud-sql-mysql-source
     description: Lists top N (default 10) ongoing queries from processlist and innodb_trx, ordered by execution time in descending order. Returns detailed information of those queries in json format, including process id, query, transaction duration, transaction wait duration, process time, transaction state, process state, username with host, transaction rows locked, transaction rows modified, and db schema.
+  list_all_locks:
+    kind: mysql-list-all-locks
+    source: cloud-sql-mysql-source
+    description: Lists top N (default 10) locks on the specified database ordered by query execution time in descending order. 
   get_query_plan:
     kind: mysql-get-query-plan
     source: cloud-sql-mysql-source
@@ -52,6 +56,10 @@ tools:
     kind: mysql-list-table-fragmentation
     source: cloud-sql-mysql-source
     description: List table fragmentation in MySQL, by calculating the size of the data and index files and free space allocated to each table. The query calculates fragmentation percentage which represents the proportion of free space relative to the total data and index size. Storage can be reclaimed for tables with high fragmentation using OPTIMIZE TABLE.
+  show_query_stats:
+    kind: mysql-show-query-stats
+    source: cloud-sql-mysql-source
+    description: Displays query execution statistics including execution count, total and average latency, max latency, total rows examined, full table scans, and inefficient index usage.
   create_backup:
     kind: cloud-sql-create-backup
     source: cloud-sql-admin-source
@@ -145,10 +153,12 @@ toolsets:
   monitor:
     - get_query_plan
     - list_active_queries
+    - list_all_locks
     - get_query_metrics
     - get_system_metrics
     - list_table_fragmentation
     - list_tables_missing_unique_indexes
+    - show_query_stats
   lifecycle:
     - create_backup
     - restore_backup
