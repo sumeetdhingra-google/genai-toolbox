@@ -8,9 +8,19 @@ description: >
 
 ## About
 
-A `mysql-list-table-stats` tool provides a table level statistics by checking table size, estimated rows count, total latency, rows fetched, rows inserted, rows updated, rows deleted, number of IO reads and IO latency, number of IO writes and IO write latency, number of IO misc operations and IO misc latency, IO latency of reads and writes on the table.
+A `mysql-list-table-stats` tool generates table-level performance and resource consumption statistics to facilitate bottleneck identification and workload analysis.
 
-`mysql-list-table-stats` outputs detailed overview of table level resource consumption including estimated row counts, table size, a complete breakdown of CRUD activity (rows fetched, inserted, updated, and deleted) and table level IO statistics such as total latency, read latency, write latency and misc latency. The output is a JSON formatted array of the top 10 MySQL tables ranked by total latency. 
+`mysql-list-table-stats` outputs detailed table-level resource consumption including estimated row counts, table size, a complete breakdown of CRUD activity (rows fetched, inserted, updated, and deleted), and IO statistics such as total, read, write and miscellaneous latency. The output is a JSON formatted array of the top 10 MySQL tables ranked by total latency. 
+
+## Compatible Sources
+
+{{< compatible-sources others="integrations/cloud-sql-mysql">}}
+
+## Requirements
+
+- `performance_schema` should be turned ON for this tool to work. 
+
+## Parameters
 
 This tool takes 4 optional input parameters:
 
@@ -21,10 +31,6 @@ This tool takes 4 optional input parameters:
 - `sort_by` (optional): The column to sort by. Valid values are `row_count`, `rows_fetched`, `rows_inserted`, `rows_updated`, `rows_deleted`, `total_latency_secs` (defaults to `total_latency_secs`)
 - `limit` (optional): Max rows to return, default 10.
 
-## Compatible Sources
-
-{{< compatible-sources others="integrations/cloud-sql-mysql">}}
-
 ## Example
 
 ```yaml
@@ -32,8 +38,11 @@ kind: tools
 name: list_table_stats
 type: mysql-list-table-stats
 source: my-mysql-instance
-description: Display table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table. Specifying a database name or table name filters the output to that specific db or table. Results are limited to 10 by default, with a maximum allowable limit of 1000.
+description: Display table statistics including table size, total latency, rows read, rows written, read and write latency for entire instance, a specified database, or a specified table. Specifying a database name or table name filters the output to that specific db or table. Results are limited to 10 by default.
 ```
+
+## Output Format
+ 
 The response is a json array with the following fields:
 ```json
 [
@@ -55,10 +64,6 @@ The response is a json array with the following fields:
 ]
 ```
 
-## prerequisite
-
-- `performance_schema` should be turned ON for this tool to work. 
-
 ## Reference
 
 | **field**   | **type** | **required** | **description**                                    |
@@ -68,7 +73,7 @@ The response is a json array with the following fields:
 | description |  string  |     true     | Description of the tool that is passed to the LLM. |
 
 
-## Use Cases
+## Advance Usage
 
 - **Finding hottest tables**: Identify tables with highest total latency, read or writes based on the `sort_by` column. 
 - **Finding tables with most reads**: Identify tables with highest reads by sorting on `rows_fetched`. 

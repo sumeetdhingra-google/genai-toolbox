@@ -23,7 +23,7 @@ import (
 	"github.com/googleapis/genai-toolbox/internal/tools/mysql/mysqllisttablestats"
 )
 
-func TestParseFromYamlExecuteSql(t *testing.T) {
+func TestParseFromYamlMySQLListTableStats(t *testing.T) {
 	ctx, err := testutils.ContextWithNewLogger()
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)

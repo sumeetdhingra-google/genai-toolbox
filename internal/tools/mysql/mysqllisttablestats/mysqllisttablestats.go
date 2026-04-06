@@ -23,6 +23,7 @@ import (
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
+	"github.com/googleapis/genai-toolbox/internal/sources/cloudsqlmysql"
 	"github.com/googleapis/genai-toolbox/internal/sources/mysql"
 	"github.com/googleapis/genai-toolbox/internal/tools"
 	"github.com/googleapis/genai-toolbox/internal/util"
@@ -55,7 +56,7 @@ INNER JOIN
   ON (t.table_schema = ts.table_schema AND t.table_name = ts.table_name)
 WHERE
   t.table_schema NOT IN ('sys', 'information_schema', 'mysql', 'performance_schema')
-  AND (COALESCE(?, '') = '' OR t.table_schema = ?)
+  AND (t.table_schema = COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) OR COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) IS NULL)
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY
   CASE
@@ -105,7 +106,10 @@ func (cfg Config) ToolConfigType() string {
 
 func getConnectedSchema(cfg Config, srcs map[string]sources.Source) string {
 	if src, ok := srcs[cfg.Source]; ok {
-		if mysqlSource, ok := src.ToConfig().(mysql.Config); ok {
+		switch mysqlSource := src.ToConfig().(type) {
+		case mysql.Config:
+			return mysqlSource.Database
+		case cloudsqlmysql.Config:
 			return mysqlSource.Database
 		}
 	}
@@ -168,7 +172,7 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 	}
 	// Validate connected schema is either skipped or same as queried schema
 	connected_schema := paramsMap["connected_schema"].(string)
-	if table_schema != connected_schema && table_schema != "" {
+	if table_schema != connected_schema && connected_schema != "" && table_schema != "" {
 		err := fmt.Errorf("error: connected schema '%s' does not match queried schema '%s'", connected_schema, table_schema)
 		return nil, util.NewClientServerError("schema match failed", http.StatusInternalServerError, err)
 	}
