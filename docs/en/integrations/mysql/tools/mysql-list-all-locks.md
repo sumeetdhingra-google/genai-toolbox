@@ -49,7 +49,7 @@ The response is a json array with the following fields:
   "lock_status": "Whether the lock has been successfully granted or is currently waiting",
   "transaction_state": "The current lifecycle phase of the transaction",
   "current_operation": "The specific internal task the transaction is currently performing",
-  "query": "The trimmed text of the SQL statement",
+  "query": "The trimmed text of the SQL statement"
   }
 ]
 ```

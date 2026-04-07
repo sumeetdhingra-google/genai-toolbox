@@ -38,7 +38,7 @@ func TestParseFromYamlMySQLListAllLocks(t *testing.T) {
 			in: `
 			kind: tools
 			name: example_tool
-			type: mysql-show-query-stats
+			type: mysql-list-all-locks
 			source: my-instance
 			description: some description
 			authRequired:

@@ -51,7 +51,7 @@ The response is a json array with the following fields:
   "sum_rows_examined": "total number of rows examined",
   "sum_no_index_used": "count of full table scan",
   "sum_no_good_index_used": "count of inefficient index use",
-  "last_seen": "time when query was last seen",
+  "last_seen": "time when query was last seen"
   }
 ]
 ```

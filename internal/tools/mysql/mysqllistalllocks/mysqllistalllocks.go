@@ -142,6 +142,10 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 	if !ok {
 		return nil, util.NewAgentError("invalid 'table_schema' parameter; expected a string", nil)
 	}
+	table_name, ok := paramsMap["table_name"].(string)
+	if !ok {
+		return nil, util.NewAgentError("invalid 'table_name' parameter; expected a string", nil)
+	}
 	limit, ok := paramsMap["limit"].(int)
 	if !ok {
 		return nil, util.NewAgentError("invalid 'limit' parameter; expected an integer", nil)
