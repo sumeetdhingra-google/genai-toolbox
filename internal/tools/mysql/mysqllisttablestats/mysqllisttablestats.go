@@ -23,8 +23,6 @@ import (
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/sources/cloudsqlmysql"
-	"github.com/googleapis/genai-toolbox/internal/sources/mysql"
 	"github.com/googleapis/genai-toolbox/internal/tools"
 	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
@@ -59,12 +57,12 @@ WHERE
   AND (t.table_schema = COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) OR COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) IS NULL)
   AND (COALESCE(?, '') = '' OR t.table_name = ?)
 ORDER BY
-  CASE
-    WHEN ? = 'row_count' THEN row_count
-    WHEN ? = 'rows_fetched' THEN rows_fetched
-    WHEN ? = 'rows_inserted' THEN rows_inserted
-    WHEN ? = 'rows_updated' THEN rows_updated
-    WHEN ? = 'rows_deleted' THEN rows_deleted
+  CASE ?
+    WHEN 'row_count' THEN row_count
+    WHEN 'rows_fetched' THEN rows_fetched
+    WHEN 'rows_inserted' THEN rows_inserted
+    WHEN 'rows_updated' THEN rows_updated
+    WHEN 'rows_deleted' THEN rows_deleted
     ELSE ts.total_latency
     END DESC
 LIMIT ?;
@@ -87,6 +85,7 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.T
 type compatibleSource interface {
 	MySQLPool() *sql.DB
 	RunSQL(context.Context, string, []any) (any, error)
+	MySQLDatabase() string
 }
 
 type Config struct {
@@ -104,17 +103,6 @@ func (cfg Config) ToolConfigType() string {
 	return resourceType
 }
 
-func getConnectedSchema(cfg Config, srcs map[string]sources.Source) string {
-	if src, ok := srcs[cfg.Source]; ok {
-		switch mysqlSource := src.ToConfig().(type) {
-		case mysql.Config:
-			return mysqlSource.Database
-		case cloudsqlmysql.Config:
-			return mysqlSource.Database
-		}
-	}
-	return ""
-}
 
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
 	allParameters := parameters.Parameters{
@@ -122,7 +110,7 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 		parameters.NewStringParameterWithDefault("table_name", "", "(Optional) Name of the table to be checked. Check all tables visible to the current user if not specified."),
 		parameters.NewStringParameterWithDefault("sort_by", "", "(Optional) The column to sort by"),
 		parameters.NewIntParameterWithDefault("limit", 10, "(Optional) Max rows to return, default is 10"),
-		parameters.NewStringParameterWithDefault("connected_schema", getConnectedSchema(cfg, srcs), "(Optional) The connected db"),
+		parameters.NewStringParameterWithRequired("connected_schema", "(Optional) The connected db", false),
 	}
 	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
 
@@ -171,7 +159,10 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 		return nil, util.NewAgentError("invalid 'limit' parameter; expected an integer", nil)
 	}
 	// Validate connected schema is either skipped or same as queried schema
-	connected_schema := paramsMap["connected_schema"].(string)
+	connected_schema, _ := paramsMap["connected_schema"].(string)
+	if connected_schema == "" {
+		connected_schema = source.MySQLDatabase()
+	}
 	if table_schema != connected_schema && connected_schema != "" && table_schema != "" {
 		err := fmt.Errorf("error: connected schema '%s' does not match queried schema '%s'", connected_schema, table_schema)
 		return nil, util.NewClientServerError("schema match failed", http.StatusInternalServerError, err)
@@ -183,7 +174,7 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 		return nil, util.NewClientServerError("error getting logger", http.StatusInternalServerError, err)
 	}
 	logger.DebugContext(ctx, fmt.Sprintf("executing `%s` tool query: %s", resourceType, listTableStatsStatement))
-	sliceParams := []any{table_schema, table_schema, table_name, table_name, sort_by, sort_by, sort_by, sort_by, sort_by, limit}
+	sliceParams := []any{table_schema, table_schema, table_name, table_name, sort_by, limit}
 	resp, err := source.RunSQL(ctx, listTableStatsStatement, sliceParams)
 	if err != nil {
 		return nil, util.ProcessGeneralError(err)
