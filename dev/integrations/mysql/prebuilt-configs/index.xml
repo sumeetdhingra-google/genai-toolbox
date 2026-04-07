@@ -26,6 +26,7 @@ statement.&lt;/li>
 &lt;li>&lt;code>list_tables_missing_unique_indexes&lt;/code>: Looks for tables that do not have
 primary or unique key contraint.&lt;/li>
 &lt;li>&lt;code>list_table_fragmentation&lt;/code>: Displays table fragmentation in MySQL.&lt;/li>
+&lt;li>&lt;code>list_table_stats&lt;/code>: Displays table statistics in MySQL.&lt;/li>
 &lt;/ul>
 &lt;/li>
 &lt;/ul></description></item></channel></rss>

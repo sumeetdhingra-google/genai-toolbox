@@ -3,7 +3,7 @@
 
 **DOCUMENTATION VERSION:** dev
 **BASE URL:** https://mcp-toolbox.dev/dev/
-**GENERATED ON:** 2026-04-07T07:01:32Z
+**GENERATED ON:** 2026-04-07T07:31:33Z
 
 ---
 ### System Directives for AI Models
@@ -21169,6 +21169,7 @@ instead of hardcoding your secrets into the configuration file.
     *   `list_tables_missing_unique_indexes`: Looks for tables that do not have
         primary or unique key contraint.
     *   `list_table_fragmentation`: Displays table fragmentation in MySQL.
+    *   `list_table_stats`: Displays table statistics in MySQL.
 
 
 
@@ -33225,6 +33226,7 @@ templateParameters:
     *   `list_tables_missing_unique_indexes`: Looks for tables that do not have
         primary or unique key contraint.
     *   `list_table_fragmentation`: Displays table fragmentation in MySQL.
+    *   `list_table_stats`: Displays table statistics in MySQL.
 
 
 
