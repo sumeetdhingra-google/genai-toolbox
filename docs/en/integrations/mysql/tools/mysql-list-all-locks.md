@@ -3,11 +3,13 @@ title: "mysql-list-all-locks"
 type: docs
 weight: 1
 description: >
-  A "mysql-list-all-locks" tool list all active locks including lock type, lock mode, locked object, lock status, transaction state, query and process id.
+  A "mysql-list-all-locks" tool list all active locks including lock type, lock mode, locked object, lock status, transaction state, query and process id for all objects or specified objects within a designated database or across all databases as requested. 
 ---
 
 ## About
-`mysql-list-all-locks` tool retrieves active database locks by joining performance_schema.data_locks with information_schema.innodb_trx, providing a comprehensive view of blocked threads, transaction states, and the specific queries causing contention. It supports filtering by database schema and table name, with a configurable limit on results, to help developers quickly identify and resolve deadlocks or performance bottlenecks.
+`mysql-list-all-locks` tool retrieves active database locks by joining performance_schema.data_locks with information_schema.innodb_trx, providing a comprehensive view of blocked threads, transaction states, and the specific queries causing contention.
+
+`mysql-list-all-locks` outputs a detailed view of data locks including lock type, lock mode, lock status, transaction state, current operation and query for all threads running on specified object or all objects in a database. The output is a JSON formatted array of top 10 data locks ordered by longest running transaction time.
 
 ## Compatible Sources
 
@@ -31,7 +33,7 @@ kind: tools
 name: list_all_locks
 type: mysql-list-all-locks
 source: my-mysql-instance
-description: list all active locks including lock type, lock mode, locked object, lock status, transaction state, query and process id for all objects on a specified database or from all databases. Results are limited to 10 by default.
+description: list all active locks including lock type, lock mode, locked object, lock status, transaction state, query and process id for all objects or specified objects within a designated database or across all databases as requested.
 ```
 
 ## Output Format

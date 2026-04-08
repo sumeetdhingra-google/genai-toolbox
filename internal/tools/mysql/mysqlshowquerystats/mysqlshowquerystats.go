@@ -23,8 +23,6 @@ import (
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
 	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/sources/cloudsqlmysql"
-	"github.com/googleapis/genai-toolbox/internal/sources/mysql"
 	"github.com/googleapis/genai-toolbox/internal/tools"
 	"github.com/googleapis/genai-toolbox/internal/util"
 	"github.com/googleapis/genai-toolbox/internal/util/parameters"
@@ -69,14 +67,16 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.T
 type compatibleSource interface {
 	MySQLPool() *sql.DB
 	RunSQL(context.Context, string, []any) (any, error)
+	MySQLDatabase() string
 }
 
 type Config struct {
-	Name         string   `yaml:"name" validate:"required"`
-	Type         string   `yaml:"type" validate:"required"`
-	Source       string   `yaml:"source" validate:"required"`
-	Description  string   `yaml:"description" validate:"required"`
-	AuthRequired []string `yaml:"authRequired"`
+	Name         string                 `yaml:"name" validate:"required"`
+	Type         string                 `yaml:"type" validate:"required"`
+	Source       string                 `yaml:"source" validate:"required"`
+	Description  string                 `yaml:"description" validate:"required"`
+	AuthRequired []string               `yaml:"authRequired"`
+	Annotations  *tools.ToolAnnotations `yaml:"annotations,omitempty"`
 }
 
 // validate interface
@@ -86,25 +86,14 @@ func (cfg Config) ToolConfigType() string {
 	return resourceType
 }
 
-func getConnectedSchema(cfg Config, srcs map[string]sources.Source) string {
-	if src, ok := srcs[cfg.Source]; ok {
-		switch mysqlSource := src.ToConfig().(type) {
-		case mysql.Config:
-			return mysqlSource.Database
-		case cloudsqlmysql.Config:
-			return mysqlSource.Database
-		}
-	}
-	return ""
-}
-
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
 	allParameters := parameters.Parameters{
 		parameters.NewStringParameterWithDefault("table_schema", "", "(Optional) The database where query statistics is to be executed. Check all queries visible to the current user if not specified"),
 		parameters.NewIntParameterWithDefault("limit", 10, "(Optional) Max rows to return, default is 10"),
-		parameters.NewStringParameterWithDefault("connected_schema", getConnectedSchema(cfg, srcs), "(Optional) The connected db"),
+		parameters.NewStringParameterWithRequired("connected_schema", "(Optional) The connected db", false),
 	}
-	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
+	annotations := tools.GetAnnotationsOrDefault(cfg.Annotations, tools.NewReadOnlyAnnotations)
+	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, annotations)
 
 	// finish tool setup
 	t := Tool{
@@ -143,7 +132,10 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 		return nil, util.NewAgentError("invalid 'limit' parameter; expected an integer", nil)
 	}
 	// Validate connected schema is either skipped or same as queried schema
-	connected_schema := paramsMap["connected_schema"].(string)
+	connected_schema, _ := paramsMap["connected_schema"].(string)
+	if connected_schema == "" {
+		connected_schema = source.MySQLDatabase()
+	}
 	if table_schema != connected_schema && connected_schema != "" && table_schema != "" {
 		err := fmt.Errorf("error: connected schema '%s' does not match queried schema '%s'", connected_schema, table_schema)
 		return nil, util.NewClientServerError("schema match failed", http.StatusInternalServerError, err)

@@ -3,11 +3,11 @@ title: "mysql-show-query-stats"
 type: docs
 weight: 1
 description: >
-  A "mysql-show-query-stats" tool report query execution statistics including execution count, total and average latency, max latency, total rows examined, full table scans, and inefficient index usage for all queries on a specified database.
+  A "mysql-show-query-stats" tool report query execution statistics including execution count, total and average latency, max latency, total rows examined, full table scans, and inefficient index usage for all queries on a specified database or all databases as requested.
 ---
 
 ## About
-`mysql-show-query-stats` tool shows a database level query statistics to find slow and inefficient queries which consums lot of datbase resources and can be tuned. 
+`mysql-show-query-stats` tool retrieves a database level query statistics from performance_schema.events_statements_summary_by_digest to identify slow and inefficient queries and provides necessary data to perform effective query tuning.
 
 `mysql-show-query-stats` outputs detailed query statistics including total latency, average latency, maximum latency, total rows sent, total rows examined, full table scan count, inefficient index usage count and last executed timestamp. The output format is JSON array of top 10 queries ranked by total latency.
 
