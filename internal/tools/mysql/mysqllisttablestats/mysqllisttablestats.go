@@ -94,6 +94,7 @@ type Config struct {
 	Source       string   `yaml:"source" validate:"required"`
 	Description  string   `yaml:"description" validate:"required"`
 	AuthRequired []string `yaml:"authRequired"`
+	Annotations  *tools.ToolAnnotations `yaml:"annotations,omitempty"`
 }
 
 // validate interface
@@ -112,7 +113,8 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 		parameters.NewIntParameterWithDefault("limit", 10, "(Optional) Max rows to return, default is 10"),
 		parameters.NewStringParameterWithRequired("connected_schema", "(Optional) The connected db", false),
 	}
-	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, nil)
+	annotations := tools.GetAnnotationsOrDefault(cfg.Annotations, tools.NewReadOnlyAnnotations)
+	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, annotations)
 
 	// finish tool setup
 	t := Tool{
