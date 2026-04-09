@@ -36,10 +36,10 @@ func TestParseFromYamlMySQLListTableStats(t *testing.T) {
 		{
 			desc: "basic example",
 			in: `
-			kind: tools
+			kind: tool
 			name: example_tool
 			type: mysql-list-table-stats
-			source: my-instance
+			source: my-mysql-instance
 			description: some description
 			authRequired:
 				- my-google-auth-service
@@ -49,7 +49,7 @@ func TestParseFromYamlMySQLListTableStats(t *testing.T) {
 				"example_tool": mysqllisttablestats.Config{
 					Name:         "example_tool",
 					Type:         "mysql-list-table-stats",
-					Source:       "my-instance",
+					Source:       "my-mysql-instance",
 					Description:  "some description",
 					AuthRequired: []string{"my-google-auth-service", "other-auth-service"},
 				},
