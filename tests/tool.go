@@ -3343,7 +3343,7 @@ func RunMySQLListTableStatsTest(t *testing.T, ctx context.Context, pool *sql.DB,
 		},
 		{
 			name:           "invoke list_table_stats with schema other than connected to, expected log error and nil results",
-			requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s"}`, "testdb")),
+			requestBody:    bytes.NewBufferString(fmt.Sprintf(`{"table_schema": "%s"}`, "somerandomdb_xyx")),
 			wantStatusCode: http.StatusInternalServerError,
 			want:           []tableStatsDetails(nil),
 		},
