@@ -176,7 +176,7 @@ import (
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllistactivequeries"
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllisttablefragmentation"
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllisttables"
-  _ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllisttablestats"
+	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllisttablestats"
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqllisttablesmissinguniqueindexes"
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/mysql/mysqlsql"
 	_ "github.com/googleapis/mcp-toolbox/internal/tools/neo4j/neo4jcypher"
