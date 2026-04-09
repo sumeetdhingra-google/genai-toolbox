@@ -12,6 +12,11 @@ A `mysql-list-table-stats` tool generates table-level performance and resource c
 
 `mysql-list-table-stats` outputs detailed table-level resource consumption including estimated row counts, table size, a complete breakdown of CRUD activity (rows fetched, inserted, updated, and deleted), and IO statistics such as total, read, write and miscellaneous latency. The output is a JSON formatted array of the top 10 MySQL tables ranked by total latency. 
 
+Below are some use cases for `mysql-list-table-stats`
+- **Finding hottest tables**: Identify tables with highest total latency, read or writes based on the `sort_by` column. 
+- **Finding tables with most reads**: Identify tables with highest reads by sorting on `rows_fetched`. 
+- **Monitoring growth**: Track `row_count` and `size_MB` of table over time to estimate growth."
+
 ## Compatible Sources
 
 {{< compatible-sources others="integrations/cloud-sql-mysql">}}
@@ -73,8 +78,3 @@ The response is a json array with the following fields:
 | description |  string  |     true     | Description of the tool that is passed to the LLM. |
 
 
-## Advance Usage
-
-- **Finding hottest tables**: Identify tables with highest total latency, read or writes based on the `sort_by` column. 
-- **Finding tables with most reads**: Identify tables with highest reads by sorting on `rows_fetched`. 
-- **Monitoring growth**: Track `row_count` and `size_MB` of table over time to estimate growth."
