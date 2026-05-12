@@ -21,11 +21,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/googleapis/genai-toolbox/cmd/internal"
-	_ "github.com/googleapis/genai-toolbox/internal/sources/bigquery"
-	_ "github.com/googleapis/genai-toolbox/internal/sources/sqlite"
-	_ "github.com/googleapis/genai-toolbox/internal/tools/bigquery/bigquerysql"
-	_ "github.com/googleapis/genai-toolbox/internal/tools/sqlite/sqlitesql"
+	"github.com/googleapis/mcp-toolbox/cmd/internal"
+	_ "github.com/googleapis/mcp-toolbox/internal/sources/bigquery"
+	_ "github.com/googleapis/mcp-toolbox/internal/sources/sqlite"
+	_ "github.com/googleapis/mcp-toolbox/internal/tools/bigquery/bigquerysql"
+	_ "github.com/googleapis/mcp-toolbox/internal/tools/sqlite/sqlitesql"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +52,7 @@ func TestInvokeTool(t *testing.T) {
 sources:
   my-sqlite:
     kind: sqlite
-    database: test.db
+    database: ":memory:"
 tools:
   hello-sqlite:
     kind: sqlite-sql

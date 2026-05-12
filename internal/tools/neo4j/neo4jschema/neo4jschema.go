@@ -22,14 +22,14 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
-	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
-	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/tools"
-	"github.com/googleapis/genai-toolbox/internal/tools/neo4j/neo4jschema/cache"
-	"github.com/googleapis/genai-toolbox/internal/tools/neo4j/neo4jschema/helpers"
-	"github.com/googleapis/genai-toolbox/internal/tools/neo4j/neo4jschema/types"
-	"github.com/googleapis/genai-toolbox/internal/util"
-	"github.com/googleapis/genai-toolbox/internal/util/parameters"
+	"github.com/googleapis/mcp-toolbox/internal/embeddingmodels"
+	"github.com/googleapis/mcp-toolbox/internal/sources"
+	"github.com/googleapis/mcp-toolbox/internal/tools"
+	"github.com/googleapis/mcp-toolbox/internal/tools/neo4j/neo4jschema/cache"
+	"github.com/googleapis/mcp-toolbox/internal/tools/neo4j/neo4jschema/helpers"
+	"github.com/googleapis/mcp-toolbox/internal/tools/neo4j/neo4jschema/types"
+	"github.com/googleapis/mcp-toolbox/internal/util"
+	"github.com/googleapis/mcp-toolbox/internal/util/parameters"
 	"github.com/neo4j/neo4j-go-driver/v6/neo4j"
 )
 
@@ -70,6 +70,8 @@ type Config struct {
 	AuthRequired       []string               `yaml:"authRequired"`
 	CacheExpireMinutes *int                   `yaml:"cacheExpireMinutes,omitempty"` // Cache expiration time in minutes.
 	Annotations        *tools.ToolAnnotations `yaml:"annotations,omitempty"`
+
+	ScopesRequired []string `yaml:"scopesRequired"`
 }
 
 // Statically verify that Config implements the tools.ToolConfig interface.
@@ -704,4 +706,8 @@ func (t Tool) GetAuthTokenHeaderName(resourceMgr tools.SourceProvider) (string, 
 // This tool does not have parameters, so return an empty set.
 func (t Tool) GetParameters() parameters.Parameters {
 	return parameters.Parameters{}
+}
+
+func (t Tool) GetScopesRequired() []string {
+	return t.ScopesRequired
 }

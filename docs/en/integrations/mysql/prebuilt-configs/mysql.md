@@ -27,3 +27,4 @@ description: "Details of the MySQL prebuilt configuration."
     *   `list_table_fragmentation`: Displays table fragmentation in MySQL.
     *   `list_all_locks`: Lists all current locks on the database.
     *   `show_query_stats`: Show query execution statistics.
+    *   `list_table_stats`: Displays table statistics in MySQL.

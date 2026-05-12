@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/googleapis/genai-toolbox/internal/testutils"
-	"github.com/googleapis/genai-toolbox/tests"
+	"github.com/googleapis/mcp-toolbox/internal/testutils"
+	"github.com/googleapis/mcp-toolbox/tests"
 )
 
 var (
@@ -146,4 +146,5 @@ func TestMySQLToolEndpoints(t *testing.T) {
 	tests.RunMySQLGetQueryPlanTest(t, ctx, pool, MySQLDatabase, tableNameParam)
 	tests.RunMySQLListAllLocks(t, ctx, pool, MySQLDatabase)
 	tests.RunMySQLShowQueryStats(t, ctx, pool, MySQLDatabase)
+	tests.RunMySQLListTableStatsTest(t, ctx, pool, MySQLDatabase, tableNameParam, tableNameAuth)
 }

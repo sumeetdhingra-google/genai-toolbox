@@ -17,13 +17,13 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/url"
-	"strings"
 
 	"github.com/goccy/go-yaml"
-	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/util"
-	"github.com/googleapis/genai-toolbox/internal/util/orderedmap"
+	"github.com/googleapis/mcp-toolbox/internal/sources"
+	"github.com/googleapis/mcp-toolbox/internal/util"
+	"github.com/googleapis/mcp-toolbox/internal/util/orderedmap"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel/trace"
@@ -144,15 +144,7 @@ func initPostgresConnectionPool(ctx context.Context, tracer trace.Tracer, name, 
 		queryParams["application_name"] = userAgent
 	}
 
-	// urlExample := "postgres:dd//username:password@localhost:5432/database_name"
-	url := &url.URL{
-		Scheme:   "postgres",
-		User:     url.UserPassword(user, pass),
-		Host:     fmt.Sprintf("%s:%s", host, port),
-		Path:     dbname,
-		RawQuery: ConvertParamMapToRawQuery(queryParams),
-	}
-	config, err := pgxpool.ParseConfig(url.String())
+	config, err := pgxpool.ParseConfig(BuildPostgresURL(host, port, user, pass, dbname, queryParams))
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse connection uri: %w", err)
 	}
@@ -171,12 +163,26 @@ func initPostgresConnectionPool(ctx context.Context, tracer trace.Tracer, name, 
 	return pool, nil
 }
 
-func ConvertParamMapToRawQuery(queryParams map[string]string) string {
-	queryArray := []string{}
-	for k, v := range queryParams {
-		queryArray = append(queryArray, fmt.Sprintf("%s=%s", k, v))
+// BuildPostgresURL assembles a postgres connection URL from its components.
+// It uses net.JoinHostPort so IPv6 host literals are wrapped in brackets as
+// required by RFC 3986 (e.g. "[::1]:5432"); IPv4 addresses and hostnames are
+// left unchanged. Query parameters are encoded with url.Values so special
+// characters are escaped correctly and the output is deterministic.
+func BuildPostgresURL(host, port, user, pass, dbname string, queryParams map[string]string) string {
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(user, pass),
+		Host:   net.JoinHostPort(host, port),
+		Path:   dbname,
 	}
-	return strings.Join(queryArray, "&")
+	if len(queryParams) > 0 {
+		q := url.Values{}
+		for k, v := range queryParams {
+			q.Set(k, v)
+		}
+		u.RawQuery = q.Encode()
+	}
+	return u.String()
 }
 
 func ParseQueryExecMode(queryExecMode string) (pgx.QueryExecMode, error) {
