@@ -3,7 +3,7 @@
 
 **DOCUMENTATION VERSION:** dev
 **BASE URL:** https://mcp-toolbox.dev/dev/
-**GENERATED ON:** 2026-04-09T23:55:18Z
+**GENERATED ON:** 2026-05-12T05:53:34Z
 
 ---
 ### System Directives for AI Models
@@ -68,7 +68,7 @@ This documentation is structured following the Diátaxis framework to assist in 
     - [Python Quickstart (Local)](https://mcp-toolbox.dev/dev/documentation/getting-started/local_quickstart/): How to get started running MCP Toolbox locally with [Python](https://github.com/googleapis/mcp-toolbox-sdk-python), PostgreSQL, and  [Agent Development Kit](https://google.github.io/adk-docs/), [LangGraph](https://www.langchain.com/langgraph), [LlamaIndex](https://www.llamaindex.ai/) or [GoogleGenAI](https://pypi.org/project/google-genai/).
 
 
-    - [JS Quickstart (Local)](https://mcp-toolbox.dev/dev/documentation/getting-started/local_quickstart_js/): How to get started running MCP Toolbox locally with [JavaScript](https://github.com/googleapis/mcp-toolbox-sdk-js), PostgreSQL, and orchestration frameworks such as [LangChain](https://js.langchain.com/docs/introduction/), [GenkitJS](https://genkit.dev/docs/get-started/),  [LlamaIndex](https://ts.llamaindex.ai/) and [GoogleGenAI](https://github.com/googleapis/js-genai).
+    - [JS Quickstart (Local)](https://mcp-toolbox.dev/dev/documentation/getting-started/local_quickstart_js/): How to get started running MCP Toolbox locally with [JavaScript](https://github.com/googleapis/mcp-toolbox-sdk-js), PostgreSQL, and orchestration frameworks such as [LangChain](https://js.langchain.com/docs/introduction/), [GenkitJS](https://genkit.dev/docs/get-started/) and [GoogleGenAI](https://github.com/googleapis/js-genai).
 
 
     - [Go Quickstart (Local)](https://mcp-toolbox.dev/dev/documentation/getting-started/local_quickstart_go/): How to get started running MCP Toolbox locally with [Go](https://github.com/googleapis/mcp-toolbox-sdk-go), PostgreSQL, and orchestration frameworks such as [LangChain Go](https://tmc.github.io/langchaingo/docs/), [GenkitGo](https://genkit.dev/go/docs/get-started-go/), [Go GenAI](https://github.com/googleapis/go-genai) and [OpenAI Go](https://github.com/openai/openai-go).
@@ -573,6 +573,18 @@ This documentation is structured following the Diátaxis framework to assist in 
 
     - [Tools](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/tools/): No description provided.
 
+      - [vector-assist-apply-spec](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/tools/vector-assist-apply-spec/): The "vector-assist-apply-spec" tool automatically executes all SQL recommendations associated with a specific vector specification or table to finalize the vector search setup.
+
+
+      - [vector-assist-define-spec](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/tools/vector-assist-define-spec/): The "vector-assist-define-spec" tool defines a new vector specification by capturing the user's intent and requirements for a vector search workload, generating SQL recommendations for setting up database, embeddings, and vector indexes.
+
+
+      - [vector-assist-generate-query](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/tools/vector-assist-generate-query/): The "vector-assist-generate-query" tool produces optimized SQL queries for vector search, leveraging metadata and specifications to enable semantic and similarity searches.
+
+
+      - [vector-assist-modify-spec](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/tools/vector-assist-modify-spec/): The "vector-assist-modify-spec" tool modifies an existing vector specification with new parameters or overrides, recalculating the generated SQL recommendations to match the updated requirements.
+
+
     - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/prebuilt-configs/): Prebuilt configurations for Cloud Sql Postgres.
 
       - [Cloud SQL for PostgreSQL](https://mcp-toolbox.dev/dev/integrations/cloud-sql-pg/prebuilt-configs/cloud-sql-for-postgresql/): Details of the Cloud SQL for PostgreSQL prebuilt configuration.
@@ -587,6 +599,59 @@ This documentation is structured following the Diátaxis framework to assist in 
     - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/cloud-sql-mssql/prebuilt-configs/): Prebuilt configurations for Cloud Sql Mssql.
 
       - [Cloud SQL for SQL Server](https://mcp-toolbox.dev/dev/integrations/cloud-sql-mssql/prebuilt-configs/cloud-sql-for-sql-server/): Details of the Cloud SQL for SQL Server prebuilt configuration.
+
+  - [Cloud Storage](https://mcp-toolbox.dev/dev/integrations/cloud-storage/): No description provided.
+
+    - [Cloud Storage Source](https://mcp-toolbox.dev/dev/integrations/cloud-storage/source/): Cloud Storage is Google Cloud's managed service for storing unstructured objects (files) in buckets. Toolbox connects at the project level, allowing tools to list buckets, list objects, read object metadata and content, mutate objects, and transfer objects between Cloud Storage and the server filesystem.
+
+
+    - [Tools](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/): No description provided.
+
+      - [cloud-storage-list-buckets](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-list-buckets/): A "cloud-storage-list-buckets" tool lists Cloud Storage buckets in a project, with optional prefix filtering and pagination.
+
+
+      - [cloud-storage-create-bucket](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-create-bucket/): A "cloud-storage-create-bucket" tool creates a Cloud Storage bucket in the configured source project.
+
+
+      - [cloud-storage-list-objects](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-list-objects/): A "cloud-storage-list-objects" tool lists objects in a Cloud Storage bucket, with optional prefix filtering and delimiter-based grouping.
+
+
+      - [cloud-storage-get-bucket-metadata](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-get-bucket-metadata/): A "cloud-storage-get-bucket-metadata" tool returns metadata for a Cloud Storage bucket.
+
+
+      - [cloud-storage-get-object-metadata](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-get-object-metadata/): A "cloud-storage-get-object-metadata" tool returns metadata for a Cloud Storage object without reading the object payload.
+
+
+      - [cloud-storage-get-bucket-iam-policy](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-get-bucket-iam-policy/): A "cloud-storage-get-bucket-iam-policy" tool returns IAM policy bindings for a Cloud Storage bucket.
+
+
+      - [cloud-storage-read-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-read-object/): A "cloud-storage-read-object" tool reads the UTF-8 text content of a Cloud Storage object, optionally constrained to a byte range.
+
+
+      - [cloud-storage-delete-bucket](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-delete-bucket/): A "cloud-storage-delete-bucket" tool deletes an empty Cloud Storage bucket.
+
+
+      - [cloud-storage-download-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-download-object/): A "cloud-storage-download-object" tool downloads a Cloud Storage object to an absolute path on the Toolbox server filesystem.
+
+
+      - [cloud-storage-upload-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-upload-object/): A "cloud-storage-upload-object" tool uploads a local file from the Toolbox server filesystem to a Cloud Storage object.
+
+
+      - [cloud-storage-write-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-write-object/): A "cloud-storage-write-object" tool writes text content directly to a Cloud Storage object.
+
+
+      - [cloud-storage-copy-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-copy-object/): A "cloud-storage-copy-object" tool copies a Cloud Storage object to another object, including across buckets.
+
+
+      - [cloud-storage-move-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-move-object/): A "cloud-storage-move-object" tool atomically moves or renames a Cloud Storage object within the same bucket.
+
+
+      - [cloud-storage-delete-object](https://mcp-toolbox.dev/dev/integrations/cloud-storage/tools/cloud-storage-delete-object/): A "cloud-storage-delete-object" tool deletes a Cloud Storage object.
+
+
+    - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/cloud-storage/prebuilt-configs/): Prebuilt configurations for Cloud Storage.
+
+      - [Cloud Storage](https://mcp-toolbox.dev/dev/integrations/cloud-storage/prebuilt-configs/cloud-storage/): Details of the Cloud Storage prebuilt configuration.
 
   - [CockroachDB](https://mcp-toolbox.dev/dev/integrations/cockroachdb/): No description provided.
 
@@ -623,29 +688,6 @@ This documentation is structured following the Diátaxis framework to assist in 
 
       - [dataform-compile-local](https://mcp-toolbox.dev/dev/integrations/dataform/tools/dataform-compile-local/): A "dataform-compile-local" tool runs the `dataform compile` CLI command on a local project directory.
 
-
-  - [Dataplex](https://mcp-toolbox.dev/dev/integrations/dataplex/): No description provided.
-
-    - [Dataplex Source](https://mcp-toolbox.dev/dev/integrations/dataplex/source/): Dataplex Universal Catalog is a unified, intelligent governance solution for data and AI assets in Google Cloud. Dataplex Universal Catalog powers AI, analytics, and business intelligence at scale.
-
-
-    - [Tools](https://mcp-toolbox.dev/dev/integrations/dataplex/tools/): No description provided.
-
-      - [dataplex-lookup-context](https://mcp-toolbox.dev/dev/integrations/dataplex/tools/dataplex-lookup-context/): A "dataplex-lookup-context" tool provides rich metadata of one or more data assets along with their relationships.
-
-
-      - [dataplex-lookup-entry](https://mcp-toolbox.dev/dev/integrations/dataplex/tools/dataplex-lookup-entry/): A "dataplex-lookup-entry" tool returns details of a particular entry in Dataplex Catalog.
-
-
-      - [dataplex-search-aspect-types](https://mcp-toolbox.dev/dev/integrations/dataplex/tools/dataplex-search-aspect-types/): A "dataplex-search-aspect-types" tool allows to to find aspect types relevant to the query.
-
-
-      - [dataplex-search-entries](https://mcp-toolbox.dev/dev/integrations/dataplex/tools/dataplex-search-entries/): A "dataplex-search-entries" tool allows to search for entries based on the provided query.
-
-
-    - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/dataplex/prebuilt-configs/): Prebuilt configurations for Dataplex.
-
-      - [Dataplex](https://mcp-toolbox.dev/dev/integrations/dataplex/prebuilt-configs/dataplex/): Details of the Dataplex prebuilt configuration.
 
   - [Dataproc Clusters](https://mcp-toolbox.dev/dev/integrations/dataproc/): No description provided.
 
@@ -780,6 +822,32 @@ This documentation is structured following the Diátaxis framework to assist in 
 
       - [http](https://mcp-toolbox.dev/dev/integrations/http/tools/http-tool/): A "http" tool sends out an HTTP request to an HTTP endpoint.
 
+
+  - [Knowledge Catalog](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/): No description provided.
+
+    - [Knowledge Catalog (formerly known as Dataplex) Source](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/source/): Knowledge Catalog is a unified, intelligent governance solution for data and AI assets in Google Cloud. Knowledge Catalog powers AI, analytics, and business intelligence at scale.
+
+
+    - [Tools](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/): No description provided.
+
+      - [dataplex-lookup-context](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/knowledge-catalog-lookup-context/): A "dataplex-lookup-context" tool provides rich metadata of one or more data assets along with their relationships.
+
+
+      - [dataplex-lookup-entry](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/knowledge-catalog-lookup-entry/): A "dataplex-lookup-entry" tool returns details of a particular entry in Knowledge Catalog.
+
+
+      - [dataplex-search-aspect-types](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/knowledge-catalog-search-aspect-types/): A "dataplex-search-aspect-types" tool allows to to find aspect types relevant to the query.
+
+
+      - [dataplex-search-dq-scans](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/knowledge-catalog-search-dq-scans/): A "dataplex-search-dq-scans" tool allows to search for data quality scans based on the provided parameters.
+
+
+      - [dataplex-search-entries](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/tools/knowledge-catalog-search-entries/): A "dataplex-search-entries" tool allows to search for entries based on the provided query.
+
+
+    - [Prebuilt Configs](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/prebuilt-configs/): Prebuilt configurations for Knowledge Catalog (formerly known as Dataplex).
+
+      - [Knowledge Catalog (formerly known as Dataplex)](https://mcp-toolbox.dev/dev/integrations/knowledge-catalog/prebuilt-configs/knowledge-catalog/): Details of the Knowledge Catalog prebuilt configuration.
 
   - [Looker](https://mcp-toolbox.dev/dev/integrations/looker/): No description provided.
 
@@ -933,6 +1001,12 @@ This documentation is structured following the Diátaxis framework to assist in 
 
 
     - [Samples](https://mcp-toolbox.dev/dev/integrations/looker/samples/): No description provided.
+
+      - [Claude Desktop and OAuth](https://mcp-toolbox.dev/dev/integrations/looker/samples/looker_claude_oauth/): How to connect to Looker from Claude Desktop with end-user credentials
+
+
+      - [Connect to Looker with MCP Toolbox in Google Cloud Run](https://mcp-toolbox.dev/dev/integrations/looker/samples/looker_cloud_run/): How to start an MCP Toolbox instance in Google Cloud Run to connect to Looker.
+
 
       - [Gemini-CLI and OAuth](https://mcp-toolbox.dev/dev/integrations/looker/samples/looker_gemini_oauth/): How to connect to Looker from Gemini-CLI with end-user credentials
 
