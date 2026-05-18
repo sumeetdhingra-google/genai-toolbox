@@ -19,29 +19,30 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 
 	yaml "github.com/goccy/go-yaml"
-	"github.com/googleapis/genai-toolbox/internal/embeddingmodels"
-	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/tools"
-	"github.com/googleapis/genai-toolbox/internal/util"
-	"github.com/googleapis/genai-toolbox/internal/util/parameters"
+	"github.com/googleapis/mcp-toolbox/internal/embeddingmodels"
+	"github.com/googleapis/mcp-toolbox/internal/sources"
+	"github.com/googleapis/mcp-toolbox/internal/tools"
+	"github.com/googleapis/mcp-toolbox/internal/util"
+	"github.com/googleapis/mcp-toolbox/internal/util/parameters"
 )
 
 const resourceType string = "mysql-list-all-locks"
 
-const listAllLocksStatement = `
+const listAllLocksStatement8plus = `
 SELECT
-  dl.thread_id AS 'thread_id',
-  it.TRX_MYSQL_THREAD_ID AS 'process_id',
-  dl.object_schema AS 'db',
-  dl.object_name AS 'table_name',
-  dl.lock_type AS 'lock_type',
-  dl.lock_mode AS 'lock_mode',
-  dl.LOCK_STATUS AS 'lock_status',
-  it.TRX_STATE AS 'transaction_state',
-  it.TRX_OPERATION_STATE AS 'current_operation',
-  substring(it.TRX_QUERY, 1, 100) AS 'query'
+  dl.thread_id AS thread_id,
+  it.TRX_MYSQL_THREAD_ID AS process_id,
+  dl.object_schema AS db,
+  dl.object_name AS table_name,
+  dl.lock_type AS lock_type,
+  dl.lock_mode AS lock_mode,
+  dl.LOCK_STATUS AS lock_status,
+  it.TRX_STATE AS transaction_state,
+  it.TRX_OPERATION_STATE AS current_operation,
+  substring(it.TRX_QUERY, 1, 100) AS query
 FROM
   performance_schema.data_locks dl
 INNER JOIN information_schema.innodb_trx it
@@ -50,6 +51,33 @@ WHERE
   (dl.object_schema = COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) OR COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) IS NULL)
   AND (COALESCE(?, '') = '' OR dl.object_name = ?)
 ORDER BY TRX_STARTED
+LIMIT ?;
+`
+
+const listAllLocksStatement57 = `
+SELECT  
+  th.THREAD_ID AS thread_id,
+  it.TRX_MYSQL_THREAD_ID AS process_id,
+  REPLACE(SUBSTRING_INDEX(il.lock_table, '.', 1), '` + "`" + `', '') AS db,
+  REPLACE(SUBSTRING_INDEX(il.lock_table, '.', -1), '` + "`" + `', '') AS table_name,
+  il.lock_type AS lock_type, 
+  il.lock_mode AS lock_mode,
+  IF(w.requested_lock_id IS NOT NULL, 'WAITING', 'GRANTED') AS lock_status,
+  it.TRX_STATE AS transaction_state,
+  it.TRX_OPERATION_STATE AS current_operation,
+  SUBSTRING(it.TRX_QUERY, 1, 100) AS query
+FROM
+  information_schema.innodb_locks il
+INNER JOIN information_schema.innodb_trx it
+  ON il.lock_trx_id = it.TRX_ID
+LEFT JOIN performance_schema.threads th
+  ON it.TRX_MYSQL_THREAD_ID = th.PROCESSLIST_ID
+LEFT JOIN information_schema.innodb_lock_waits w
+  ON il.lock_id = w.requested_lock_id
+WHERE
+  (REPLACE(SUBSTRING_INDEX(il.lock_table, '.', 1), '` + "`" + `', '') = COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) OR COALESCE(NULLIF(?, ''), NULLIF(DATABASE(), '')) IS NULL)
+  AND (COALESCE(?, '') = '' OR REPLACE(SUBSTRING_INDEX(il.lock_table, '.', -1), '` + "`" + `', '') = ?)
+ORDER BY it.TRX_STARTED
 LIMIT ?;
 `
 
@@ -99,6 +127,14 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 	annotations := tools.GetAnnotationsOrDefault(cfg.Annotations, tools.NewReadOnlyAnnotations)
 	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters, annotations)
 
+	rawS, ok := srcs[cfg.Source]
+	if !ok {
+		return nil, fmt.Errorf("source %q not found", cfg.Source)
+	}
+	if _, ok = rawS.(compatibleSource); !ok {
+		return nil, fmt.Errorf("source %q is not a compatible source", cfg.Source)
+	}
+
 	// finish tool setup
 	t := Tool{
 		Config:      cfg,
@@ -123,6 +159,26 @@ func (t Tool) Invoke(ctx context.Context, resourceMgr tools.SourceProvider, para
 	source, err := tools.GetCompatibleSource[compatibleSource](resourceMgr, t.Source, t.Name, t.Type)
 	if err != nil {
 		return nil, util.NewClientServerError("source used is not compatible with the tool", http.StatusInternalServerError, err)
+	}
+
+	var version string
+	if err := source.MySQLPool().QueryRow("SELECT VERSION()").Scan(&version); err != nil {
+		return nil, util.NewClientServerError("failed to get mysql version", http.StatusInternalServerError, err)
+	}
+	var listAllLocksStatement string
+	if strings.HasPrefix(version, "5.7") {
+		listAllLocksStatement = listAllLocksStatement57
+	} else {
+		listAllLocksStatement = listAllLocksStatement8plus
+	}
+
+	// Check performance schema
+	var performanceSchemaName, performanceSchemaValue string
+	if err := source.MySQLPool().QueryRow("SHOW VARIABLES LIKE 'performance_schema'").Scan(&performanceSchemaName, &performanceSchemaValue); err != nil {
+		return nil, util.NewClientServerError("failed to check performance_schema", http.StatusInternalServerError, err)
+	}
+	if performanceSchemaValue != "ON" {
+		return nil, util.NewClientServerError("enable performance_schema to run this tool", http.StatusInternalServerError, nil)
 	}
 
 	paramsMap := params.AsMap()
@@ -194,4 +250,8 @@ func (t Tool) GetAuthTokenHeaderName(resourceMgr tools.SourceProvider) (string, 
 
 func (t Tool) GetParameters() parameters.Parameters {
 	return t.allParams
+}
+
+func (t Tool) GetScopesRequired() []string {
+        return nil
 }

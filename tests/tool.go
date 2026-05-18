@@ -4053,7 +4053,7 @@ func RunMySQLShowQueryStats(t *testing.T, ctx context.Context, pool *sql.DB, dat
 	}
 
 	// Generating stats for query
-	selectStmt := fmt.Sprintf("SELECT 1")
+	selectStmt := "SELECT 1"
 	if _, err := pool.ExecContext(ctx, selectStmt); err != nil {
 		t.Logf("warning: unable to execute select: %v", err)
 	}
